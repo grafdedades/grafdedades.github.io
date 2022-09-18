@@ -1,0 +1,620 @@
+[
+  {
+    "label": "Dani Gómez",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Alex Carrillo",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Arnau Turch",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Arnau Espinalt",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pol Puigdemont",
+    "year": 2020,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Jordi Puig",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pau Matas",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marc Garcia",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pol Rifé",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pol Costa",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Richi Tarré",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Diwa Vilà",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pol Rosinés",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Raul Higueras",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Núria Cantero",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Helena Ferran",
+    "year": 2018,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pau Tarragó",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Roger Creus",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Tomás Gadea",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Chus Antoñanzas",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Ángela Rodriguez",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "David Bergés",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Raquel Ventós",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Mireia Boneta",
+    "year": 2017,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marina García",
+    "year": 2017,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Danae Canillas",
+    "year": 2017,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Arnau Padrés",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "Andrea Garcia",
+    "year": 2018,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "José Pérez",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "Sandra Millet",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marina López",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Carla Miquel",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Ona Clarà",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Sofia Diaz",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marc de Gràcia",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Aina Pérez",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Lena",
+    "year": 2018,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Eva Brigitte",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Víctor Novelle",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Alex Ferrando",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Cris Aguilera",
+    "year": 2017,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Alejandro Campayo",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Roser Cantenys",
+    "year": 2017,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Arnau Saumell",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "Pau Marquez",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Oriol Ricart",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "Marc Vernet",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Andreu Huguet",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "Zoe Meini",
+    "year": 2017,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Maria Ribalta",
+    "year": 2017,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Albert Domínguez",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Xavier Rubiès",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Toni Jubés",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Hugo Jiménez",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pau Biosca",
+    "year": 2020,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marta Neira",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Santi Sayol",
+    "year": 2020,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Judith Devers",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pol Lizarran",
+    "year": 2020,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Andrea Bellmunt",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marc Franquesa",
+    "year": 2020,
+    "gender": "M",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "Queralt Benito",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Martí Farré",
+    "year": 2020,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marc de Miguel",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "Javi Mestre",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Carlota Gonzalbo",
+    "year": 2021,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Martí Cortada",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Maria Risques",
+    "year": 2021,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marc Janer",
+    "year": 2021,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Clara Rovira",
+    "year": 2018,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Joan Vaquer",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Nil Crespo",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Omar Ferrer",
+    "year": 2018,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Liz Segon",
+    "year": 2018,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Maria Perera",
+    "year": 2018,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Anna Ramón",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marina Rosell",
+    "year": 2018,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Olga Villar",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Valèria Caro",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Arnau Vilella",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "Pau Lozano",
+    "year": 2017,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Sigrid Vila",
+    "year": 2019,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pau Redón",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "TRUE"
+  },
+  {
+    "label": "Aïda Santacreu",
+    "year": 2021,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Silvia Vallet",
+    "year": 2021,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Silvia Fabregas",
+    "year": 2021,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Esther Fanyanàs",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Aida Torres",
+    "year": 2021,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Jan Quer",
+    "year": 2021,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Xavi Rodríguez",
+    "year": 2021,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Elena Gonzalez",
+    "year": 2021,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Enric Millán",
+    "year": 2021,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Aina Luis",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Clàudia Len",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Adrián Cerezuela",
+    "year": 2020,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Pablo Gete",
+    "year": 2021,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marc Torrens",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marçal Comajoan",
+    "year": 2020,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Júlia Royes",
+    "year": 2021,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Álvaro Domingo",
+    "year": 2019,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Maria Arroyo",
+    "year": 2020,
+    "gender": "F",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Marc Colomer",
+    "year": 2021,
+    "gender": "M",
+    "cfis": "FALSE"
+  },
+  {
+    "label": "Xiao Segarra",
+    "year": 2021,
+    "gender": "F",
+    "cfis": "FALSE"
+  }
+]
