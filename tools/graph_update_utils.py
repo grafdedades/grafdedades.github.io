@@ -14,8 +14,8 @@ import json
 import ipywidgets as widgets
 
 __author__ = 'Pau Matas'
-__maintainer__ = 'Pau Matas'
-__email__ = 'pmatasalbiol@gmail.com'
+__maintainer__ = 'Álvaro Domingo'
+__email__ = 'grafdedades@gmail.com'
 __status__ = 'Dev'
 
 # Working directory setting
