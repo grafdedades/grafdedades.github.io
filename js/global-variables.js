@@ -30,7 +30,7 @@ var max_degree = [];
 
 // ### RIGHT BUTTONS ###
 
-var node_ids = ["n2017", "n2018", "n2019", "n2020", "n2021"]
-var edge_ids = ["e2018", "e2019", "e2020", "e2021", "e2022"]
+var node_ids = ["n2017", "n2018", "n2019", "n2020", "n2021", "n2022"]
+var edge_ids = ["e2018", "e2019", "e2020", "e2021", "e2022", "e2023"]
 
 var unmark = false;

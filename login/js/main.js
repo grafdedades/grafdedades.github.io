@@ -10,6 +10,7 @@ $(window).on("load",  async () => {
             var bcrypt = dcodeIO.bcrypt;
             if (bcrypt.compareSync(codi.val(), CodiCorrecteHash)) {
                 window.location.assign("graph.html");
+                
             }
             else {
                 alert("Codi incorrecte.");

@@ -19,8 +19,15 @@
         <div class="mb-1 d-flex justify-content-center">
           <label for="codi-acces" class="form-label">Codi d'accés</label>
         </div>
+       <script>
+        function getVal() {
+          const val = document.querySelector('input').value;
+          sessionStorage.setItem("pass", val);
+        }
+      </script>
         <div class="mb-3 d-flex justify-content-center">
-          <input type="password" class="form-control w-75" id="codi-acces" name="codi-acces" required>
+          <input type="password" class="form-control w-75" id="codi-acces" name="codi-acces" onblur="getVal()" required>
+    
         </div>
         <div class="mb-3 d-flex justify-content-center">
           <button type="submit" class="btn btn-outline-primary">Entrar</button>
@@ -31,6 +38,7 @@
   <!--hash bcrypt-->
   <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js" integrity="sha256-r9S9KZvN5nEN1voCkVbj4RdMSLwAa4qeujL5ZOWSN4M=" crossorigin="anonymous"></script>
   <!--javascript file-->
-  <script src="login/js/main.js"></script>
+  <script src="login/js/main.js">
+  </script>
 </body>
 </html>

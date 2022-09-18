@@ -87,6 +87,7 @@ function createForceNetwork(nodes, edges) {
   d3.select("#e2020").on("click", () => YearFilter(2020, YearSet));
   d3.select("#e2021").on("click", () => YearFilter(2021, YearSet));
   d3.select("#e2022").on("click", () => YearFilter(2022, YearSet));
+  d3.select("#e2023").on("click", () => YearFilter(2023, YearSet));
 
   // Filtrar segons curs dels nodes amb els botons
   d3.select("#n2017").on("click", () => Nodes_YearFilter(2017));
@@ -94,6 +95,7 @@ function createForceNetwork(nodes, edges) {
   d3.select("#n2019").on("click", () => Nodes_YearFilter(2019));
   d3.select("#n2020").on("click", () => Nodes_YearFilter(2020));
   d3.select("#n2021").on("click", () => Nodes_YearFilter(2021));
+  d3.select("#n2022").on("click", () => Nodes_YearFilter(2022));
 
 
   // Selecció de persones quan es mira el ranking

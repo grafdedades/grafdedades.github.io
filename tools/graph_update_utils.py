@@ -24,16 +24,65 @@ dname = os.path.dirname(abspath)
 os.chdir(dname)
 
 # Data
+
+testvar = None
+def testf():
+    global testvar
+    testvar = 5
+def testf2():
+    print(testvar)
+
+password = widgets.Text(
+    placeholder='Contrassenya',
+    disabled=False
+)
+
+decrypt_button = widgets.Button(description="Desencripta!", indent=True)
+
+def decrypt(_):
+    os.system("node ../fernet/decrypt.js " + password.value + " ../data/encrypted_nodes.txt ../data/decrypted_nodes.json")
+    os.system("node ../fernet/decrypt.js " + password.value + " ../data/encrypted_edges.txt ../data/decrypted_edges.json")
+    os.system("node ../fernet/decrypt.js " + password.value + " ../data/encrypted_unwanted.txt ../data/decrypted_unwanted.json")
+
+    # At this point i don't even know which of these declarations are necessary or not
+    global nodes, nodes_names, edges, current_edges, unwanted, unwanted_person, wanted, person1, person2
+    with open('./../data/decrypted_nodes.json') as json_file:
+        nodes = json.load(json_file)
+
+    with open('./../data/decrypted_edges.json') as json_file:
+        edges = json.load(json_file)
+
+    with open('./../data/decrypted_unwanted.json') as json_file:
+        unwanted = json.load(json_file)
+
+    node_mutable_widgets()
+    edge_mutable_widgets()
+    unwanted_mutable_widgets()
+
+    print("Desencriptat!")
+
+decrypt_button.on_click(decrypt)
+
+end_button = widgets.Button(description="Encripta!", indent=True)
+
+def encrypt_and_close(_):
+    from data_generator import generate
+    generate()
+    os.system("node ../fernet/encrypt.js " + password.value + " ../data/decrypted_nodes.json ../data/encrypted_nodes.txt")
+    os.system("node ../fernet/encrypt.js " + password.value + " ../data/decrypted_edges.json ../data/encrypted_edges.txt")
+    os.system("node ../fernet/encrypt.js " + password.value + " ../data/decrypted_unwanted.json ../data/encrypted_unwanted.txt")
+    os.system("node ../fernet/encrypt.js " + password.value + " ../data/decrypted_data.json ../data/encrypted_data.txt")
+    os.system("rm ../data/decrypted*")
+
+    print("Encriptat!")
+
+end_button.on_click(encrypt_and_close)
+
+
 node_names, current_edges = None, None # Global vars
 
-with open('./../data/raw_nodes.json') as json_file:
-    nodes = json.load(json_file)
-
-with open('./../data/raw_edges.json') as json_file:
-    edges = json.load(json_file)
-
-with open('./../data/unwanted.json') as json_file:
-    unwanted = json.load(json_file)
+def get_persons():
+    return person1, person2, unwanted_person
 
 # Node tools
 
@@ -71,7 +120,7 @@ def node_mutable_widgets():
     global nodes_names
     nodes_names = {n['label'] for n in nodes}
 
-node_mutable_widgets()
+#node_mutable_widgets()
 
 def add_node(_):
     """ Adds the node specified on the widgets to the graph raw data files """
@@ -88,7 +137,7 @@ def add_node(_):
         "cfis": str(cfis.value).upper()
     })
 
-    with open('./../data/raw_nodes.json', 'w') as json_file:
+    with open('./../data/decrypted_nodes.json', 'w') as json_file:
         json.dump(nodes, json_file, ensure_ascii=False, indent=2)
 
     print(f'S\'ha afegit el node \"{person.value}\" correctament')
@@ -143,6 +192,13 @@ relationship = widgets.Checkbox(
     indent=True
 )
 
+remove = widgets.Checkbox(
+    value=False,
+    description='El que vols és eliminar l\'aresta?',
+    disabled=False,
+    indent=True
+)
+
 edge_button = widgets.Button(description="Afegeix l'aresta!", indent=True)
 
 def edge_mutable_widgets():
@@ -162,9 +218,9 @@ def edge_mutable_widgets():
     person2 = widgets.Dropdown(
         options=list(sorted(nodes_names)),
         description='Person 2:',
-    )
+    ) 
 
-edge_mutable_widgets()
+#edge_mutable_widgets()
 
 def update_edge():
     """ Updates the edge updatable attributes with the specified ones on
@@ -176,9 +232,12 @@ def update_edge():
         if ((e['source'] == person1.value and e['target'] == person2.value) or
             (e['source'] == person2.value and e['target'] == person1.value)):
 
-            edges[i]["weight"] = points.value
-            edges[i]["repeated"] = str(repetition.value).upper()
-            edges[i]["relationship"] = str(relationship.value).upper()
+            if remove.value:
+                edges.pop(i)
+            else:
+                edges[i]["weight"] = points.value
+                edges[i]["repeated"] = str(repetition.value).upper()
+                edges[i]["relationship"] = str(relationship.value).upper()
 
             break
 
@@ -196,6 +255,8 @@ def add_edge(_):
         update_edge()
 
     else:
+        if remove.value:
+            raise Exception('The edge you want to remove is not in the graph')
         edges.append({
             "source": person1.value,
             "target": person2.value,
@@ -207,10 +268,10 @@ def add_edge(_):
             "relationship": str(relationship.value).upper()
         })
 
-    with open('./../data/raw_edges.json', 'w') as json_file:
+    with open('./../data/decrypted_edges.json', 'w') as json_file:
         json.dump(edges, json_file, ensure_ascii=False, indent=2)
 
-    print(f'La aresta entre els nodes \"{person1.value}\" i \"{person2.value}\" ha estat afegida amb èxit')
+    print(f'La aresta entre els nodes \"{person1.value}\" i \"{person2.value}\" ha estat', 'eliminada' if remove.value else 'afegida', 'amb èxit')
 
     edge_mutable_widgets()
 
@@ -234,7 +295,7 @@ def unwanted_mutable_widgets():
         description='Nom: ',
     )
 
-unwanted_mutable_widgets()
+#unwanted_mutable_widgets()
 
 unwanted_button = widgets.Button(description="Anonimitza el node...")
 
@@ -243,7 +304,7 @@ def add_unwanted(_):
 
     unwanted['unwanted'].append(unwanted_person.value)
 
-    with open('./../data/unwanted.json', 'w') as json_file:
+    with open('./../data/decrypted_unwanted.json', 'w') as json_file:
         json.dump(unwanted, json_file, ensure_ascii=False, indent=2)
 
     print(f'S\'ha anonimitzat el node \"{unwanted_person.value}\" correctament')
