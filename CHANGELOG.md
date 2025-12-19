@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.1.0] - 2024-12-20
+
+### Improved
+- **Graph-updater notebook** completely rewritten with better documentation
+- Split edge UI: separate sections for "Add" and "Search/Modify/Delete"
+- Node UI: vertical layout with dynamic birth year helper
+- Edge defaults: year and month auto-set to current date
+- Modify edge: can now edit all fields (year, month, place, comments)
+
+### Removed
+- `data_generator.py` - functionality moved to `storage.py`
+
+---
+
 ## [2.0.0] - 2024-12-19
 
 ### Changed

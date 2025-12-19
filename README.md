@@ -95,8 +95,68 @@ save_graph_data(data, password)
 
 ---
 
+## Data Schema
+
+When decrypted, the graph data has this structure:
+
+### Node (Person)
+```json
+{
+  "id": 0,
+  "label": "Nom Cognom",
+  "year": 2023,
+  "gender": "F",
+  "cfis": false
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | int | Auto-assigned sequential ID |
+| `label` | string | Full name (unique) |
+| `year` | int | University entry year (2017-2030) |
+| `gender` | "F" / "M" / "-" | Gender |
+| `cfis` | bool | Is CFIS student |
+
+### Edge (Relationship)
+```json
+{
+  "id": 0,
+  "source": "Persona 1",
+  "target": "Persona 2",
+  "weight": 3,
+  "place": "Barcelona",
+  "month": "Sep",
+  "year": 2023,
+  "repeated": false,
+  "relationship": true,
+  "comments": null
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `weight` | 1/2/3/5 | Lio=1, Manual=2, Oral=3, Complert=5 |
+| `place` | string | Location |
+| `month` | string | Month (Jan, Feb, ..., Dec, or empty) |
+| `year` | int | Year of event |
+| `repeated` | bool | If they repeated |
+| `relationship` | bool | If they have/had a relationship |
+
+### Unwanted (Anonymized)
+```json
+{
+  "unwanted": ["Persona 1", "Persona 2"]
+}
+```
+
+People in this list appear as "Anònim X" in the public graph.
+
+---
+
 ## Authors
 
 - **Pau Matas** (original)
 - **Álvaro Domingo** (maintainer)
 - grafdedades@gmail.com
+
