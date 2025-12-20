@@ -18,18 +18,38 @@ That's it! The year selectors and filters update automatically.
 
 ## Quick Start
 
-### Initial Setup (Optional)
+### Initial Setup
 To avoid entering the password every time:
 ```bash
+pip install -r requirements.txt
+
+# Optional
 cp .env.example .env
 # Edit .env and set your PASSWORD
 ```
 
 ### Updating Data
-```bash
-pip install -r requirements.txt
-jupyter notebook Graph-updater.ipynb
+
+Open the `Graph-updater.ipynb` notebook and follow the instructions.
+
+### Committing Data Updates
+
+When updating graph data, **only commit these 2 files**:
 ```
+data/graph_data.enc
+data/encrypted_data.txt
+```
+
+Use these commit message conventions:
+| Change Type | Commit Message |
+|-------------|----------------|
+| Add nodes | `data: add N new nodes` |
+| Add edges | `data: add N new edges` |
+| Anonymize | `data: anonymize N nodes` |
+| Mixed | `data: update graph (nodes, edges)` |
+
+Optionally add event context: `data: add 5 new edges (Colònies 2024)`
+
 
 ### Viewing the Graph
 
@@ -174,5 +194,7 @@ People in this list appear as "Anònim X" in the public graph.
 
 - **Pau Matas** (original)
 - **Álvaro Domingo** (maintainer)
+- **Santiago Romagosa** (contributor)
 - grafdedades@gmail.com
+- @data.graf (Instagram)
 
