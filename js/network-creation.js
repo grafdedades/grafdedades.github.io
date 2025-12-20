@@ -38,19 +38,12 @@ function createNetwork(json) {
 
 // Initialize year filter dropdowns dynamically from data
 function initYearFilters() {
-  console.log('initYearFilters called');
-  console.log('nodes:', nodes.length, 'edges:', edges.length);
-  
   // Extract unique years from data
   var edgeYears = [...new Set(edges.map(e => e.year).filter(y => y))].sort((a, b) => b - a);
   var nodeYears = [...new Set(nodes.map(n => n.year).filter(y => y))].sort((a, b) => b - a);
   
-  console.log('edgeYears:', edgeYears);
-  console.log('nodeYears:', nodeYears);
-  
   // Populate edge year dropdown
   var edgeSelect = $('#edgeYearSelect');
-  console.log('edgeSelect found:', edgeSelect.length);
   
   edgeYears.forEach(function(year) {
     edgeSelect.append('<option value="' + year + '">' + year + '</option>');
@@ -58,7 +51,6 @@ function initYearFilters() {
   
   // Populate node year dropdown (with birth year)
   var nodeSelect = $('#nodeYearSelect');
-  console.log('nodeSelect found:', nodeSelect.length);
   
   nodeYears.forEach(function(year) {
     var birthYear = year - 18;
@@ -66,7 +58,6 @@ function initYearFilters() {
   });
   
   // Initialize bootstrap-select after adding options
-  console.log('Refreshing selectpicker...');
   $('.selectpicker').selectpicker('refresh');
   
   // Set up change handlers
@@ -79,8 +70,6 @@ function initYearFilters() {
     nodeSelect.selectpicker('deselectAll');
     resetGraph();
   });
-  
-  console.log('initYearFilters complete');
 }
 
 // Handle edge year filter change
@@ -213,7 +202,6 @@ function createForceNetwork(nodes, edges) {
     .style("opacity", "1");
 
 
-  console.log(max_degree)
   // nodeEnter.filter(function(p) {
   //     return max_degree.includes(p)
   //   }).append('text')
@@ -267,7 +255,6 @@ function createForceNetwork(nodes, edges) {
      var element = document.body;
      element.classList.toggle("dark-mode");
      darkmode = !darkmode
-     console.log(darkmode)
      if (darkmode){
        color_t = "#ffffff"
        color_n = "white"
@@ -275,7 +262,6 @@ function createForceNetwork(nodes, edges) {
        color_t = "#000000"
        color_n = "black"
      }
-     console.log(color_t);
      reset();
 
   }
@@ -401,7 +387,6 @@ function createForceNetwork(nodes, edges) {
     } else {
       YearSet.add(year)
     }
-    console.log(YearSet, YearSet.size)
 
     if (YearSet.size == 0) {
       filteredEdges = edges

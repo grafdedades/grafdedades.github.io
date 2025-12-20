@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.3.2] - 2024-12-20
+
+### Added
+- **Favicon & Meta Tags**: Rounded logo as favicon with Open Graph/Twitter meta tags for social sharing
+- **Logout Button**: "Sortir" button in sidebar to clear session and return to login
+- **Session Security**: 
+  - Password only stored in sessionStorage on successful login
+  - Direct access to graph.html without login redirects to login page
+  - Decryption failure clears session and redirects to login
+
+### Improved
+- **Login Flow**: Password now stored only when login button pressed (not on keystroke)
+- **Url Parameters**: Removed referrer-based auth that broke on tunnels
+
+### Fixed
+- **Session Timing**: Added small delay for sessionStorage sync after login redirect
+
+### Removed
+- Debug console.log statements from `network-creation.js`
+- Unused `referrer.js` include from `graph.html`
+
+---
+
 ## [2.3.1] - 2024-12-20
 
 ### Fixed
@@ -12,7 +35,7 @@
 ### Improved
 - **SEO**: Added meta description tag to `graph.html`
 - **CSS Cleanup**: Removed unused `.input1` and `.my-legend` legacy styles (~80 lines)
-- **Year Range**: Extended year validation from 2030 to 2035 in `models.py` and widgets
+- **Year Range**: Extended year validation from 2030 to 2100 in `models.py` and widgets
 - **Colors**: Added year colors for 2025-2030 in `global-variables.js`
 
 ---

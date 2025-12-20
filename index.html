@@ -3,7 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Data Graph</title>
+  <title>Graf de Dades</title>
+  <meta name="description" content="Graf de Dades: Visualització interactiva de xarxa social amb D3.js">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/favicon.png">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Graf de Dades">
+  <meta property="og:description" content="Visualització interactiva de xarxa social amb D3.js">
+  <meta property="og:image" content="/favicon.png">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Graf de Dades">
+  <meta name="twitter:description" content="Visualització interactiva de xarxa social amb D3.js">
+  <meta name="twitter:image" content="/favicon.png">
   <!--bootstrap-->
   <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/lux/bootstrap.min.css" rel="stylesheet">
   <!--custom css-->
@@ -19,14 +36,8 @@
         <div class="mb-1 d-flex justify-content-center">
           <label for="codi-acces" class="form-label">Codi d'accés</label>
         </div>
-       <script>
-        function getVal() {
-          const val = document.querySelector('input').value;
-          sessionStorage.setItem("pass", val);
-        }
-      </script>
         <div class="mb-3 d-flex justify-content-center">
-          <input type="password" class="form-control w-75" id="codi-acces" name="codi-acces" oninput="getVal()" required>
+          <input type="password" class="form-control w-75" id="codi-acces" name="codi-acces" required>
     
         </div>
         <div class="mb-3 d-flex justify-content-center">

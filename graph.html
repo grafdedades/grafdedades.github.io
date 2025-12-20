@@ -2,11 +2,27 @@
 <html lang="ca">
 
 <head>
-  <title>Data Graph</title>
+  <title>Graf de Dades</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <meta name="description" content="Graf de Dades: Visualització interactiva de xarxa social amb D3.js">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/favicon.png">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Graf de Dades">
+  <meta property="og:description" content="Visualització interactiva de xarxa social amb D3.js">
+  <meta property="og:image" content="/favicon.png">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Graf de Dades">
+  <meta name="twitter:description" content="Visualització interactiva de xarxa social amb D3.js">
+  <meta name="twitter:image" content="/favicon.png">
   
   <!-- D3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
@@ -27,7 +43,6 @@
   <script type="text/javascript" src="/js/graph-info-completer.js"></script>
   <script type="text/javascript" src="/js/displayers.js"></script>
   <script type="text/javascript" src="/js/network-creation.js"></script>
-  <script type="text/javascript" src="/js/referrer.js"></script>
   <script src="/fernet/fernetBrowser.js"></script>
 
   <!-- CSS -->
@@ -153,9 +168,12 @@
 
         <!-- Instagram link at bottom of sidebar -->
         <div style="margin-top: auto; padding: 20px; text-align: center;">
-          <a href="https://instagram.com/data.graf" class="text-white" style="font-size: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+          <a href="https://instagram.com/data.graf" class="text-white" style="font-size: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
             <i class="fa fa-instagram" style="position: static; color: inherit; margin-right: 10px;"></i> @data.graf
           </a>
+          <button id="logoutBtn" class="btn btn-outline-danger btn-sm btn-block" onclick="logout()">
+            <i class="fa fa-sign-out"></i> Sortir
+          </button>
         </div>
 
       </div>
@@ -171,6 +189,19 @@
             <script type="text/javascript">
               var password = sessionStorage.getItem("pass");
               
+              // Logout function - clear session and redirect to login
+              function logout() {
+                sessionStorage.removeItem("pass");
+                window.location.replace("/");
+              }
+              
+              // Redirect to login if no password
+              setTimeout(function() {
+                if (!sessionStorage.getItem("pass")) {
+                  window.location.replace("/");
+                }
+              }, 50);
+              
               const fetchData = () => {
                return new Promise((resolve, reject) => (
                 fetch('/data/encrypted_data.txt')
@@ -179,15 +210,23 @@
                 ))
               };
               async function getData() {
-                const data = await fetchData()
-                var secret = new fernet.Secret(password.repeat(50).substring(0,43) + "=");
-                var token = new fernet.Token({
-                    secret: secret,
-                    token: data,
-                    ttl: 0
-                })
-                var output = token.decode();
-                createNetwork(JSON.parse(output))
+                try {
+                  const data = await fetchData();
+                  var secret = new fernet.Secret(password.repeat(50).substring(0,43) + "=");
+                  var token = new fernet.Token({
+                      secret: secret,
+                      token: data,
+                      ttl: 0
+                  });
+                  var output = token.decode();
+                  createNetwork(JSON.parse(output));
+                } catch (error) {
+                  console.error("Decryption failed:", error);
+                  // Clear bad password and redirect to login
+                  sessionStorage.removeItem("pass");
+                  alert("Codi incorrecte o error de desxifrat. Torna a iniciar sessió.");
+                  window.location.replace("/");
+                }
               }
               getData();
             </script>
