@@ -1,8 +1,27 @@
 # Changelog
 
+## [2.3.0] - 2024-12-20
+
+### Added
+- **Admin Notebook** (`Admin-Notebook.ipynb`) for advanced graph management:
+  - JSON sync: Export/Import data as plain JSON for external editing
+  - Delete decrypted JSON prompt after import (security)
+  - Edge management: Search, Modify, Delete edges
+  - User deletion: Complete node removal with all connected edges
+- **Auto-load password** from `.env` file (optional convenience)
+- **Security**: `_config.yml` to exclude sensitive files from GitHub Pages
+
+### Improved
+- Role separation: `Graph-updater.ipynb` is now read-only for edges (add/search only)
+- Fixed duplicate button callback issue on module reload
+- README updated with security documentation and file role explanations
+
+---
+
 ## [2.2.0] - 2024-12-20
 
 ### Improved
+
 - **UI Modernization**: Complete layout overhaul
   - Overlay sidebar on all screen sizes
   - Mobile: Hidden header, floating menu button, full-screen graph

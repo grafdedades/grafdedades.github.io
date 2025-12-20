@@ -22,8 +22,10 @@ from IPython.display import display, clear_output
 from datetime import datetime
 
 # Import new modules
-from tools.storage import load_graph_data, save_graph_data
+from tools.storage import load_graph_data, save_graph_data, DATA_DIR
 from tools.models import Node, Edge, GraphData
+import json
+from pathlib import Path
 
 # =============================================================================
 # GLOBAL STATE
@@ -75,6 +77,7 @@ def on_load_click(_):
             _update_node_widgets()
             _update_edge_widgets()
             _update_unwanted_widgets()
+            _update_admin_user_widgets()
             
         except Exception as e:
             print(f"❌ Error: {e}")
@@ -608,14 +611,54 @@ delete_button.on_click(on_delete_click)
 # DISPLAY HELPERS (for notebook)
 # =============================================================================
 
+def _try_auto_load():
+    """Attempt to load password from .env file and auto-decrypt."""
+    try:
+        env_path = Path(".env")
+        if not env_path.exists():
+            return
+
+        # Simple manual parsing to avoid dependencies
+        content = env_path.read_text(encoding="utf-8")
+        for line in content.splitlines():
+            line = line.strip()
+            if line.startswith("PASSWORD="):
+                pwd = line.split("=", 1)[1].strip()
+                # Remove quotes if present
+                if (pwd.startswith('"') and pwd.endswith('"')) or \
+                   (pwd.startswith("'") and pwd.endswith("'")):
+                    pwd = pwd[1:-1]
+                
+                if pwd and pwd != "your_secret_password_here":
+                    password_widget.value = pwd
+                    # Trigger load
+                    on_load_click(None)
+                    print("⚡ Auto-login des de .env")
+                break
+    except Exception as e:
+        print(f"⚠️ Error llegint .env: {e}")
+
 def show_load_section():
     """Display the password and load/save section."""
-    return widgets.VBox([
+    # Trigger auto-load after widget creation
+    widgets.jslink((password_widget, 'value'), (password_widget, 'value')) # Hack to ensure sync
+    
+    # Use a small delay or immediate call? Immediate is fine for widgets.
+    # We return the VBox, but we can also trigger the logic.
+    # To be safe, we might want to defer it, but usually immediate works 
+    # if the widget exists.
+    
+    box = widgets.VBox([
         widgets.HTML("<h2>🔐 Carregar Dades</h2>"),
         password_widget,
         widgets.HBox([load_button, save_button]),
         output_area
     ])
+    
+    # Try auto-load effectively when this is called
+    _try_auto_load()
+    
+    return box
 
 
 def show_node_section():
@@ -632,24 +675,38 @@ def show_node_section():
     ])
 
 
-def show_edge_search_section():
-    """Display the edge search/modify/delete section."""
+def show_edge_search_section(admin_mode: bool = False):
+    """
+    Display the edge search section.
+    If admin_mode=True, allows Modify and Delete.
+    If admin_mode=False, only allows View.
+    """
     # Update dropdowns
     _update_search_widgets()
     
-    return widgets.VBox([
-        widgets.HTML("<h2>🔍 Buscar / Modificar / Eliminar Aresta</h2>"),
+    children = [
+        widgets.HTML("<h2>🔍 Buscar Aresta" + (" / Modificar / Eliminar" if admin_mode else "") + "</h2>"),
         widgets.HBox([search_person1, search_person2]),
-        search_button,
-        widgets.HTML("<hr><b>Modificar:</b>"),
-        widgets.HBox([modify_year, modify_month]),
-        modify_weight,
-        modify_place,
-        widgets.HBox([modify_repeated, modify_relationship]),
-        modify_comments,
-        widgets.HBox([modify_button, delete_button]),
-        search_output
-    ])
+        search_button
+    ]
+    
+    if admin_mode:
+        children.extend([
+            widgets.HTML("<hr><b>Modificar:</b>"),
+            widgets.HBox([modify_year, modify_month]),
+            modify_weight,
+            modify_place,
+            widgets.HBox([modify_repeated, modify_relationship]),
+            modify_comments,
+            widgets.HBox([modify_button, delete_button])
+        ])
+    
+    children.append(search_output)
+    
+    # Hidden hack to update admin user widgets when this section is shown/used
+    # widgets.interactive_output(lambda: _update_admin_user_widgets(), {}) 
+    
+    return widgets.VBox(children)
 
 
 def show_edge_add_section():
@@ -685,14 +742,212 @@ def show_anonymize_section():
         unwanted_output
     ])
 
+# =============================================================================
+# ADMIN WIDGETS (JSON Sync & User Delete)
+# =============================================================================
 
-# Legacy compatibility
-def show_edge_section():
-    """Legacy: shows both edge sections in tabs."""
-    return widgets.Tab(children=[
-        show_edge_add_section(),
-        show_edge_search_section()
-    ], titles=['➕ Afegir', '🔍 Buscar/Modificar'])
+export_json_button = widgets.Button(
+    description="📤 Exportar a JSON",
+    button_style='info',
+    tooltip='Desa les dades actuals a un fitxer JSON desencriptat'
+)
+
+import_json_button = widgets.Button(
+    description="📥 Importar de JSON",
+    button_style='warning',
+    tooltip='Carrega les dades del fitxer JSON i sobreescriu la memòria'
+)
+
+json_output = widgets.Output()
+
+def on_export_json_click(_):
+    """Export current graph data to decrypted JSON file."""
+    global graph_data
+    with json_output:
+        clear_output()
+        if graph_data is None:
+            print("❌ No hi ha dades carregades! Desencripta primer.")
+            return
+
+        try:
+            file_path = DATA_DIR / "decrypted_graph.json"
+            # Prepare data same as save logic but meant for manual edit
+            data_dict = {
+                "nodes": [n.model_dump() for n in graph_data.nodes],
+                "edges": [e.model_dump() for e in graph_data.edges],
+                "unwanted": graph_data.unwanted
+            }
+            file_path.write_text(json.dumps(data_dict, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"✅ Exportat correctament a:")
+            print(f"   {file_path}")
+            print("⚠️ ATENCIÓ: Aquest fitxer conté dades personals DE SENSE ENCRIPTAR.")
+        except Exception as e:
+            print(f"❌ Error exportant: {e}")
+
+def on_import_json_click(_):
+    """Import graph data from decrypted JSON file."""
+    global graph_data
+    with json_output:
+        clear_output()
+        file_path = DATA_DIR / "decrypted_graph.json"
+        if not file_path.exists():
+            print(f"❌ No s'ha trobat el fitxer: {file_path}")
+            return
+        
+        try:
+            content = file_path.read_text(encoding="utf-8")
+            data = json.loads(content)
+            
+            # Reconstruct GraphData
+            new_graph = GraphData(
+                nodes=[Node(**n) for n in data.get("nodes", [])],
+                edges=[Edge(**e) for e in data.get("edges", [])],
+                unwanted=data.get("unwanted", [])
+            )
+            
+            graph_data = new_graph
+            print(f"✅ Importat correctament del JSON!")
+            print(f"   {len(graph_data.nodes)} nodes, {len(graph_data.edges)} arestes")
+            
+            # Refresh all widgets
+            _update_node_widgets()
+            _update_edge_widgets()
+            _update_unwanted_widgets()
+            _update_admin_user_widgets()
+            
+            # Prompt to delete the decrypted file
+            print("")
+            print("⚠️ SEGURETAT: Vols ELIMINAR el fitxer JSON desencriptat?")
+            print("   (Recomanat per evitar problemes de versionat i seguretat)")
+            display(delete_json_button)
+            
+        except Exception as e:
+            print(f"❌ Error important JSON: {e}")
+
+# Delete JSON button (shown after import)
+delete_json_button = widgets.Button(
+    description="🗑️ Eliminar decrypted_graph.json",
+    button_style='danger',
+    tooltip='Elimina el fitxer JSON desencriptat'
+)
+
+def on_delete_json_click(_):
+    """Delete the decrypted JSON file."""
+    with json_output:
+        clear_output()
+        file_path = DATA_DIR / "decrypted_graph.json"
+        try:
+            if file_path.exists():
+                file_path.unlink()
+                print("✅ Fitxer decrypted_graph.json eliminat correctament!")
+            else:
+                print("ℹ️ El fitxer ja no existeix.")
+        except Exception as e:
+            print(f"❌ Error eliminant: {e}")
+
+# Clear existing handlers to prevent duplicates
+delete_json_button._click_handlers.callbacks = []
+delete_json_button.on_click(on_delete_json_click)
+
+
+export_json_button.on_click(on_export_json_click)
+import_json_button.on_click(on_import_json_click)
+
+
+# ADMIN USER DELETE
+
+admin_user_dropdown = widgets.Dropdown(
+    options=[],
+    description='Usuari:',
+    style={'description_width': 'initial'}
+)
+
+delete_user_button = widgets.Button(
+    description="💀 ELIMINAR USUARI",
+    button_style='danger',
+    tooltip='Elimina el node i totes les seves arestes permanentment'
+)
+
+admin_user_output = widgets.Output()
+
+def _update_admin_user_widgets():
+    """Update admin dropdowns."""
+    if graph_data:
+        admin_user_dropdown.options = sorted(_get_node_names())
+
+def on_delete_user_click(_):
+    """Completely delete a user and their edges."""
+    global graph_data
+    with admin_user_output:
+        clear_output()
+        
+        user = admin_user_dropdown.value
+        if not user:
+            print("❌ Selecciona un usuari!")
+            return
+            
+        # Confirmation check (simple button state for now, assuming admin implies caution)
+        # In a real app we might ask for confirmation. Here we just process.
+        
+        if graph_data is None:
+            return
+
+        print(f"⌛ Processant eliminació de '{user}'...")
+        
+        # 1. Remove Edges
+        initial_edges = len(graph_data.edges)
+        graph_data.edges = [e for e in graph_data.edges if e.source != user and e.target != user]
+        removed_edges = initial_edges - len(graph_data.edges)
+        
+        # 2. Remove Node
+        initial_nodes = len(graph_data.nodes)
+        graph_data.nodes = [n for n in graph_data.nodes if n.label != user]
+        removed_nodes = initial_nodes - len(graph_data.nodes)
+        
+        # 3. Remove from Unwanted
+        if user in graph_data.unwanted:
+            graph_data.unwanted.remove(user)
+            print("   - Eliminat de la llista d'anonimització")
+            
+        print(f"✅ Usuari '{user}' eliminat!")
+        print(f"   - Nodes eliminats: {removed_nodes}")
+        print(f"   - Arestes eliminades: {removed_edges}")
+        
+        # Update widgets
+        _update_node_widgets()
+        _update_edge_widgets()
+        _update_unwanted_widgets()
+        _update_admin_user_widgets()
+
+delete_user_button.on_click(on_delete_user_click)
+
+
+def show_admin_json_section():
+    """Display JSON sync tools."""
+    return widgets.VBox([
+        widgets.HTML("<h2>🔄 Sincronització JSON</h2>"),
+        widgets.HTML("<p>Permet editar les dades manualment en un fitxer de text.</p>"),
+        widgets.HBox([export_json_button, import_json_button]),
+        json_output
+    ])
+
+def show_admin_user_section():
+    """Display user deletion tools."""
+    _update_admin_user_widgets()
+    return widgets.VBox([
+        widgets.HTML("<h2>💀 Zona de Perill: Eliminar Usuari</h2>"),
+        widgets.HTML("""
+            <div style='background-color: #ffebee; padding: 10px; border-left: 5px solid #f44336;'>
+                <p><b>ATENCIÓ:</b> Aquesta acció eliminarà <b>permanentment</b> l'usuari i <b>totes</b> les seves connexions.</p>
+                <p>Si només vols que no aparegui el nom al graf públic, fes servir l'opció <b>"Anonimitzar"</b>.</p>
+            </div>
+        """),
+        widgets.HBox([admin_user_dropdown, delete_user_button]),
+        admin_user_output
+    ])
+
+
+
 
 
 # =============================================================================

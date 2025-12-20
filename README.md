@@ -5,20 +5,37 @@ Interactive social network visualization with D3.js and encrypted data storage.
 [![GitHub Pages](https://img.shields.io/badge/Hosted%20on-GitHub%20Pages-blue)](https://grafdedades.github.io)
 [![Instagram](https://img.shields.io/badge/Instagram-@data.graf-E4405F)](https://instagram.com/data.graf)
 
+---
+
+## Yearly Maintenance
+
+1. **Update Colors**: Add a new color code for the new year in `js/global-variables.js` (`colors` array).
+2. **Update Data**: Use the notebook to add new nodes/edges.
+
+That's it! The year selectors and filters update automatically.
+
+---
+
 ## Quick Start
+
+### Initial Setup (Optional)
+To avoid entering the password every time:
+```bash
+cp .env.example .env
+# Edit .env and set your PASSWORD
+```
+
+### Updating Data
+```bash
+pip install -r requirements.txt
+jupyter notebook Graph-updater.ipynb
+```
 
 ### Viewing the Graph
 
 ```bash
 python -m http.server 3000
 # Open http://localhost:3000
-```
-
-### Updating Data
-
-```bash
-pip install -r requirements.txt
-jupyter notebook Graph-updater.ipynb
 ```
 
 ---
@@ -39,8 +56,8 @@ grafdedades.github.io/
 ├── index.html              # Login page
 ├── graph.html              # Visualization
 ├── data/
-│   ├── graph_data.enc      # Source of truth
-│   └── encrypted_data.txt  # Frontend data
+│   ├── graph_data.enc      # ADMIN ONLY: Source of truth (Full data)
+│   └── encrypted_data.txt  # PUBLIC: Frontend data (Anonymized)
 ├── tools/
 │   ├── models.py           # Data models
 │   ├── crypto.py           # Encryption
@@ -50,9 +67,15 @@ grafdedades.github.io/
 
 ---
 
-## Data Protection
+## Data Protection & Security
 
-All data is encrypted at rest using Fernet symmetric encryption:
+All data is encrypted at rest using Fernet symmetric encryption.
+
+### File Roles
+- **`data/graph_data.enc`**: The **Source of Truth**. It contains all data including the real names of people marked as "unwanted". This file is used only by the Python Admin tools and is **NOT** served by the website.
+- **`data/encrypted_data.txt`**: The **Public File**. This is generated automatically when you save. It contains "Anònim X" placeholders instead of real names for unwanted people. This is the only file the website (browser) downloads.
+
+### Encryption Details
 - Decryption happens client-side in the browser
 - Password never transmitted over network
 - PBKDF2 key derivation (100k iterations)
@@ -85,15 +108,6 @@ data.nodes.append(Node(label="Name", year=2024, gender="F", cfis=False))
 # Save (auto-backup)
 save_graph_data(data, password)
 ```
-
----
-
-## Yearly Maintenance
-
-1. **Update Colors**: Add a new color code for the new year in `js/global-variables.js` (`colors` array).
-2. **Update Data**: Use the notebook to add new nodes/edges.
-
-That's it! The year selectors and filters update automatically.
 
 ---
 
