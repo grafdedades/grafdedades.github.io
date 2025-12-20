@@ -2,16 +2,18 @@ const CodiCorrecteHash = "$2y$10$6fj0YCNzZQnQ3qyUJRsusuqAt6FJH.nNrF1R0xxTHnX6216
 
 $(window).on("load",  async () => {
 
+    // Store password as user types
+    $('#codi-acces').on("input", function() {
+        sessionStorage.setItem("pass", $(this).val());
+    });
+
     $('#login').on("submit", async (event) => {
         event.preventDefault();
         try {
             var codi = $("#codi-acces");
             var bcrypt = dcodeIO.bcrypt;
             
-            // Store password first
-            sessionStorage.setItem("pass", codi.val());
-            
-            // Then verify
+            // Verify password
             if (bcrypt.compareSync(codi.val(), CodiCorrecteHash)) {
                 // Password correct - redirect
                 window.location.href = "graph.html";
