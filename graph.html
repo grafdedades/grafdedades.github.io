@@ -1,10 +1,12 @@
-<html>
+<!DOCTYPE html>
+<html lang="ca">
 
 <head>
   <title>Data Graph</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  <meta name="description" content="Graf de Dades: Visualització interactiva de xarxa social amb D3.js">
   
   <!-- D3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
@@ -38,7 +40,7 @@
 
 <body>
 
-  <header class="navbar navbar-expand-lg navbar-dark bg-primary" style="height:60px;">
+  <header class="navbar navbar-expand-lg navbar-dark bg-primary" style="height:60px; display:flex; align-items:center; justify-content:space-between;">
     <nav class="navbar">
       <!-- Sidebar Toggle -->
       <button id="sidebarToggle" class="btn btn-link text-white mr-2" style="font-size: 24px; padding: 0;">
@@ -263,10 +265,7 @@
         sidebar.classList.toggle('sidebar-closed');
       });
       
-      // Filter panel toggle
-      var filterPanel = document.getElementById('filterPanel');
-      var filterToggle = document.getElementById('filterToggle');
-      
+      // Filter panel toggle (uses filterPanel and filterToggle from line 245-246)
       filterToggle.addEventListener('click', function() {
         filterPanel.classList.toggle('filter-expanded');
         filterPanel.classList.toggle('filter-collapsed');

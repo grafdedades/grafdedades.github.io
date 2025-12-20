@@ -119,7 +119,7 @@ node_name = widgets.Text(
 node_year = widgets.BoundedIntText(
     value=datetime.now().year,
     min=2017,
-    max=2030,
+    max=2035,
     description='Any entrada:',
     style={'description_width': 'initial'}
 )
@@ -258,7 +258,7 @@ edge_month = widgets.Dropdown(
 edge_year = widgets.BoundedIntText(
     value=datetime.now().year,
     min=2017,
-    max=2030,
+    max=2035,
     description='Any:',
     style={'description_width': 'initial'}
 )
@@ -461,7 +461,7 @@ modify_weight = widgets.Dropdown(
 modify_year = widgets.BoundedIntText(
     value=datetime.now().year,
     min=2017,
-    max=2030,
+    max=2035,
     description='Any:',
     style={'description_width': 'initial'}
 )

@@ -18,8 +18,8 @@ class Node(BaseModel):
     @field_validator("year")
     @classmethod
     def validate_year(cls, v: int) -> int:
-        if not 2017 <= v <= 2030:
-            raise ValueError(f"Year must be between 2017 and 2030, got {v}")
+        if not 2017 <= v <= 2100:
+            raise ValueError(f"Year must be between 2017 and 2100, got {v}")
         return v
 
     @field_validator("cfis", mode="before")

@@ -53,7 +53,6 @@ function initYearFilters() {
   console.log('edgeSelect found:', edgeSelect.length);
   
   edgeYears.forEach(function(year) {
-    var color = colors[year] || colors['OTHER'];
     edgeSelect.append('<option value="' + year + '">' + year + '</option>');
   });
   
@@ -62,7 +61,6 @@ function initYearFilters() {
   console.log('nodeSelect found:', nodeSelect.length);
   
   nodeYears.forEach(function(year) {
-    var color = colors[year] || colors['OTHER'];
     var birthYear = year - 18;
     nodeSelect.append('<option value="' + year + '" data-content="' + year + ' <em>(' + birthYear + ')</em>">' + year + '</option>');
   });

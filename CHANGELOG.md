@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.3.1] - 2024-12-20
+
+### Fixed
+- **HTML Compliance**: Added missing `<!DOCTYPE html>` declaration to `graph.html`
+- **Accessibility**: Changed `lang` attribute from "en" to "ca" (Catalan)
+- **JavaScript Bug**: Fixed undefined `err` variable in `login/js/main.js` catch block
+- **Duplicate Declarations**: Removed duplicate `filterPanel`/`filterToggle` variables in `graph.html`
+- **Password Handling**: Changed from `onblur` to `oninput` for more reliable password capture
+
+### Improved
+- **SEO**: Added meta description tag to `graph.html`
+- **CSS Cleanup**: Removed unused `.input1` and `.my-legend` legacy styles (~80 lines)
+- **Year Range**: Extended year validation from 2030 to 2035 in `models.py` and widgets
+- **Colors**: Added year colors for 2025-2030 in `global-variables.js`
+
+---
+
 ## [2.3.0] - 2024-12-20
 
 ### Added

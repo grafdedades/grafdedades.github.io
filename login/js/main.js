@@ -17,7 +17,7 @@ $(window).on("load",  async () => {
                 window.location.reload();
             }
         } catch (error) {
-            console.log(err);
+            console.log(error);
         }
     });
 });
