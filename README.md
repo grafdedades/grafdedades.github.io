@@ -66,7 +66,8 @@ All data is encrypted at rest using Fernet symmetric encryption:
 | Click node | Highlight connections |
 | Click edge | Show details |
 | Search | Find a person |
-| Year filters | Filter by cohort |
+| Year filters | Multi-select by cohort (Dynamic) |
+| Pan & Zoom | Explore graph freely |
 
 ---
 
@@ -89,9 +90,10 @@ save_graph_data(data, password)
 
 ## Yearly Maintenance
 
-1. `js/global-variables.js` — Add color for new year
-2. `graph.html` — Add year selector buttons
-3. `js/network-creation.js` — Add filter handlers
+1. **Update Colors**: Add a new color code for the new year in `js/global-variables.js` (`colors` array).
+2. **Update Data**: Use the notebook to add new nodes/edges.
+
+That's it! The year selectors and filters update automatically.
 
 ---
 

@@ -1,19 +1,172 @@
 
-BODY{
+BODY, HTML {
   font-family: 'Montserrat', sans-serif;
+  overflow: hidden;
+  height: 100%;
 }
 .dark-mode {
   background-color: black;
   color: white;
 }
 
+/* Main section container */
+#graf {
+  height: calc(100vh - 60px);
+  overflow: hidden;
+}
 
 svg {
-  height: 1000px;
-  width: 1000px;
-  margin: -100px -50px -100px -75px;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
-  display:block;
+/* Filter panel styling */
+.filter-panel {
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+/* Toggle button styling */
+#filterToggle {
+  text-decoration: none !important;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
+#filterToggle:hover,
+#filterToggle:focus,
+#filterToggle:active {
+  text-decoration: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Filter panel collapsed state */
+.filter-panel.filter-collapsed {
+  width: 36px !important;
+  height: 36px !important;
+  max-width: 36px !important;
+  min-width: 36px !important;
+  padding: 0 !important;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-panel.filter-collapsed #filterContent {
+  display: none;
+}
+
+/* Center toggle button when collapsed */
+.filter-panel.filter-collapsed #filterToggle {
+  position: static;
+  font-size: 24px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Sidebar toggle styles - overlay on main container only */
+#sidebar {
+  position: absolute !important;
+  left: 0;
+  top: 0;
+  z-index: 3000;
+  height: 100%;
+  transition: transform 0.3s ease;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+}
+
+#sidebar.sidebar-closed {
+  transform: translateX(-100%);
+}
+
+#sidebar.sidebar-open {
+  transform: translateX(0);
+}
+
+#sidebarToggle {
+  transition: left 0.3s ease;
+}
+
+/* Responsive: mobile styles */
+@media (max-width: 768px) {
+  /* Hide header on mobile */
+  header {
+    display: none !important;
+  }
+  
+  /* Main takes full viewport on mobile */
+  main {
+    height: 100vh !important;
+  }
+  
+  /* Show floating menu toggle */
+  #floatingMenuToggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Hide Instagram in header (it's in sidebar) */
+  header .fa-instagram {
+    display: none;
+  }
+  
+  /* Larger touch targets */
+  .btn, button {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  
+  /* Larger fonts for readability */
+  body {
+    font-size: 16px;
+  }
+  
+  /* Filter panel adjustments */
+  .filter-panel {
+    max-width: 180px !important;
+    padding: 10px;
+  }
+  
+  .filter-panel label {
+    font-size: 12px;
+  }
+  
+  /* Search bar */
+  #search_bar {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Rankings card */
+  .card-body {
+    padding: 8px !important;
+  }
+  
+  /* Dropdown select */
+  .bootstrap-select .dropdown-menu {
+    max-height: 200px !important;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  #sidebar {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  
+  .filter-panel {
+    right: 5px !important;
+    left: auto;
+    max-width: 160px !important;
+  }
 }
 
 div.tooltip {
@@ -101,13 +254,15 @@ display: inline-block;
 color:black;
 }
 .autocomplete-items {
-position: relative;
-border: 1px solid #d4d4d4;
-border-bottom: none;
-border-top: none;
-
-/*position the autocomplete items to be the same width as the container:*/
-
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
 }
 .autocomplete-items div {
 padding: 10px;

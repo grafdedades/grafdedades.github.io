@@ -31,8 +31,72 @@ function createNetwork(json) {
   });
   createRankings();
   createForceNetwork(nodes, edges);
-
+  
+  // Initialize dynamic year filters after network is created
+  initYearFilters();
 }
+
+// Initialize year filter dropdowns dynamically from data
+function initYearFilters() {
+  console.log('initYearFilters called');
+  console.log('nodes:', nodes.length, 'edges:', edges.length);
+  
+  // Extract unique years from data
+  var edgeYears = [...new Set(edges.map(e => e.year).filter(y => y))].sort((a, b) => b - a);
+  var nodeYears = [...new Set(nodes.map(n => n.year).filter(y => y))].sort((a, b) => b - a);
+  
+  console.log('edgeYears:', edgeYears);
+  console.log('nodeYears:', nodeYears);
+  
+  // Populate edge year dropdown
+  var edgeSelect = $('#edgeYearSelect');
+  console.log('edgeSelect found:', edgeSelect.length);
+  
+  edgeYears.forEach(function(year) {
+    var color = colors[year] || colors['OTHER'];
+    edgeSelect.append('<option value="' + year + '">' + year + '</option>');
+  });
+  
+  // Populate node year dropdown (with birth year)
+  var nodeSelect = $('#nodeYearSelect');
+  console.log('nodeSelect found:', nodeSelect.length);
+  
+  nodeYears.forEach(function(year) {
+    var color = colors[year] || colors['OTHER'];
+    var birthYear = year - 18;
+    nodeSelect.append('<option value="' + year + '" data-content="' + year + ' <em>(' + birthYear + ')</em>">' + year + '</option>');
+  });
+  
+  // Initialize bootstrap-select after adding options
+  console.log('Refreshing selectpicker...');
+  $('.selectpicker').selectpicker('refresh');
+  
+  // Set up change handlers
+  edgeSelect.on('changed.bs.select', handleEdgeYearChange);
+  nodeSelect.on('changed.bs.select', handleNodeYearChange);
+  
+  // Clear filters button
+  $('#clearFilters').on('click', function() {
+    edgeSelect.selectpicker('deselectAll');
+    nodeSelect.selectpicker('deselectAll');
+    resetGraph();
+  });
+  
+  console.log('initYearFilters complete');
+}
+
+// Handle edge year filter change
+function handleEdgeYearChange() {
+  var selectedYears = $('#edgeYearSelect').val() || [];
+  filterByEdgeYears(selectedYears.map(Number));
+}
+
+// Handle node year filter change
+function handleNodeYearChange() {
+  var selectedYears = $('#nodeYearSelect').val() || [];
+  filterByNodeYears(selectedYears.map(Number));
+}
+
 
 
 // Create a network from an edgelist and nodelist and print it in an svg
@@ -44,15 +108,40 @@ function createForceNetwork(nodes, edges) {
     names.push(node.label)
   });
 
+  // Get actual SVG dimensions
+  var svg = d3.select("svg");
+  var svgWidth = parseInt(svg.style("width")) || window.innerWidth - 400;
+  var svgHeight = parseInt(svg.style("height")) || window.innerHeight - 60;
+  
+  // On mobile, use larger canvas for better panning
+  var isMobile = window.innerWidth < 768;
+  var canvasWidth = isMobile ? svgWidth * 2 : svgWidth;
+  var canvasHeight = isMobile ? svgHeight * 2 : svgHeight;
+  
+  // Add zoom behavior
+  var zoom = d3.behavior.zoom()
+    .scaleExtent([0.3, 3]) // Min/max zoom
+    .on("zoom", zoomed);
+  
+  // Apply zoom to SVG
+  svg.call(zoom);
+  
+  // Create a container group for all graph elements (this gets transformed on zoom)
+  var container = svg.append("g").attr("class", "graph-container");
+  
+  function zoomed() {
+    container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+  }
+  
   var force = d3.layout.force().nodes(nodes).links(edges)
-    .size([1000, 1000])
+    .size([canvasWidth, canvasHeight])
     .charge(-200) // Repulsion between nodes
     .linkDistance(50)
     .on("tick", updateNetwork)
     .linkStrength(0.4)
 
 
-  d3.select("svg").selectAll("line")
+  container.selectAll("line")
     .data(edges)
     .enter()
     .append("line")
@@ -68,7 +157,7 @@ function createForceNetwork(nodes, edges) {
       }
     })
 
-  var nodeEnter = d3.select("svg").selectAll("g.node")
+  var nodeEnter = container.selectAll("g.node")
     .data(nodes)
     .enter()
     .append("g")
@@ -80,22 +169,7 @@ function createForceNetwork(nodes, edges) {
   d3.select("#search_button")
     .on("click", SearchNode);
 
-  // Filtrar anys segons arestes amb els botons de la dreta
-  // TODO: Fer-ho més escalable, probablement canviant graph.html
-  d3.select("#e2018").on("click", () => YearFilter(2018, YearSet));
-  d3.select("#e2019").on("click", () => YearFilter(2019, YearSet));
-  d3.select("#e2020").on("click", () => YearFilter(2020, YearSet));
-  d3.select("#e2021").on("click", () => YearFilter(2021, YearSet));
-  d3.select("#e2022").on("click", () => YearFilter(2022, YearSet));
-  d3.select("#e2023").on("click", () => YearFilter(2023, YearSet));
-
-  // Filtrar segons curs dels nodes amb els botons
-  d3.select("#n2017").on("click", () => Nodes_YearFilter(2017));
-  d3.select("#n2018").on("click", () => Nodes_YearFilter(2018));
-  d3.select("#n2019").on("click", () => Nodes_YearFilter(2019));
-  d3.select("#n2020").on("click", () => Nodes_YearFilter(2020));
-  d3.select("#n2021").on("click", () => Nodes_YearFilter(2021));
-  d3.select("#n2022").on("click", () => Nodes_YearFilter(2022));
+  // Year filters are now handled dynamically by initYearFilters()
 
 
   // Selecció de persones quan es mira el ranking
@@ -399,6 +473,92 @@ function createForceNetwork(nodes, edges) {
       .style("opacity", "0.3");
   }
 
+  // NEW: Filter by multiple edge years (from dropdown)
+  function filterByEdgeYears(years) {
+    reset();
+    
+    if (years.length === 0) {
+      // No filter selected - show all
+      return;
+    }
+    
+    var egoIDs = [];
+    var filteredEdges = edges.filter(function(p) {
+      return years.includes(p.year);
+    });
+    filteredEdges.forEach(function(p) {
+      egoIDs.push(p.target.id);
+      egoIDs.push(p.source.id);
+    });
+    
+    d3.selectAll("line").filter(function(p) {
+        return filteredEdges.indexOf(p) == -1;
+      })
+      .style("opacity", "0.3")
+      .style("stroke-width", "1");
+    
+    d3.selectAll("text").filter(function(p) {
+        return egoIDs.indexOf(p.id) == -1;
+      })
+      .style("opacity", "0");
+    
+    d3.selectAll("circle").filter(function(p) {
+        return egoIDs.indexOf(p.id) == -1;
+      })
+      .style("fill", "#66CCCC")
+      .style("opacity", "0.3");
+  }
+
+  // NEW: Filter by multiple node years (from dropdown)
+  function filterByNodeYears(years) {
+    reset();
+    
+    if (years.length === 0) {
+      // No filter selected - show all
+      return;
+    }
+    
+    var egoIDs = [];
+    var filteredEdges = edges.filter(function(p) {
+      return years.includes(p.source.year) || years.includes(p.target.year);
+    });
+    filteredEdges.forEach(function(p) {
+      if (years.includes(p.target.year)) {
+        egoIDs.push(p.target.id);
+      }
+      if (years.includes(p.source.year)) {
+        egoIDs.push(p.source.id);
+      }
+    });
+    
+    d3.selectAll("line").filter(function(p) {
+        return filteredEdges.indexOf(p) == -1;
+      })
+      .style("opacity", "0.3")
+      .style("stroke-width", "1");
+    
+    d3.selectAll("text").filter(function(p) {
+        return egoIDs.indexOf(p.id) == -1;
+      })
+      .style("opacity", "0");
+    
+    d3.selectAll("circle").filter(function(p) {
+        return egoIDs.indexOf(p.id) == -1;
+      })
+      .style("fill", "#66CCCC")
+      .style("opacity", "0.3");
+  }
+
+  // NEW: Reset graph to original state (callable from outside)
+  function resetGraph() {
+    reset();
+  }
+  
+  // Expose functions globally for dropdown handlers
+  window.filterByEdgeYears = filterByEdgeYears;
+  window.filterByNodeYears = filterByNodeYears;
+  window.resetGraph = resetGraph;
+
   // Print the graph as original
 
   function reset() {
@@ -568,7 +728,7 @@ function createForceNetwork(nodes, edges) {
 
   }
 
-  // Move nodes
+  // Move nodes (no boundary constraints - use pan/zoom to navigate)
   function updateNetwork() {
     d3.select("svg").selectAll("line")
       .attr("x1", function(d) {
@@ -592,9 +752,9 @@ function createForceNetwork(nodes, edges) {
   }
   autocomplete(document.getElementById("search_bar"), names);
 
-  const svg = document.querySelector('svg')
+  const svgElement = document.querySelector('svg')
   window.addEventListener('click',e=>{
-    if(e.target == svg){
+    if(e.target == svgElement){
       reset();
     }
   })

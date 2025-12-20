@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.2.0] - 2024-12-20
+
+### Improved
+- **UI Modernization**: Complete layout overhaul
+  - Overlay sidebar on all screen sizes
+  - Mobile: Hidden header, floating menu button, full-screen graph
+  - Pan & Zoom support for graph exploration
+- **Dynamic Filters**:
+  - Replaced hardcoded year buttons with `bootstrap-select` dropdowns
+  - Auto-populated years from graph data (no manual HTML editing needed)
+  - Display birth year in node selector
+- **Layout & Usability**:
+  - Collapsible filter panel (translucent square mode)
+  - Optimized sidebar layout and z-index layering (3000+) to fix overlaps
+  - Autocomplete results now dropdown correctly using absolute positioning
+  - Flexbox-based search bar for pixel-perfect vertical alignment
+
+### Fixed
+- Instagram link positioning in sidebar
+- Search button visibility and size consistency issues
+- Mobile touch targets and font sizing
+
+---
+
 ## [2.1.0] - 2024-12-20
 
 ### Improved
