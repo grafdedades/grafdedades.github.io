@@ -1,0 +1,5 @@
+pydantic>=2.0
+cryptography>=41.0
+jupyter
+ipywidgets
+pandas

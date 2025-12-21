@@ -1,314 +1,964 @@
-# -*- graph_update_utils.py -*-
-
+# -*- coding: utf-8 -*-
 """
-Python script designed to provide features to a .ipynb file able to update the
-graph raw data (nodes, edges and unwanted nodes) with less code as possible.
+Graf de Dades - Graph Update Utilities
+======================================
+
+Interactive widgets for updating the graph data through Jupyter Notebook.
+Uses the new Python-native encryption modules.
+
+Usage:
+    1. Run the notebook cells in order
+    2. Enter password and click "Desencripta!" to load data
+    3. Add/modify nodes and edges using the widgets
+    4. Click "Desa els canvis!" to save and encrypt
+
+Authors:
+    - Pau Matas (original)
+    - Álvaro Domingo (maintainer)
 """
 
-# Built-in/Generic Imports
-import os
-
-# Libs
-import pandas as pd
-import json
 import ipywidgets as widgets
+from IPython.display import display, clear_output
+from datetime import datetime
 
-__author__ = 'Pau Matas'
-__maintainer__ = 'Álvaro Domingo'
-__email__ = 'grafdedades@gmail.com'
-__status__ = 'Dev'
+# Import new modules
+from tools.storage import load_graph_data, save_graph_data, DATA_DIR
+from tools.models import Node, Edge, GraphData
+import json
+from pathlib import Path
 
-# Working directory setting
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
+# =============================================================================
+# GLOBAL STATE
+# =============================================================================
 
-# Data
+# Current graph data (loaded after decryption)
+graph_data: GraphData = None
 
-testvar = None
-def testf():
-    global testvar
-    testvar = 5
-def testf2():
-    print(testvar)
+# Current password (needed for saving)
+_current_password: str = None
 
-password = widgets.Text(
-    placeholder='Contrassenya',
-    disabled=False
+# =============================================================================
+# PASSWORD & LOAD/SAVE WIDGETS
+# =============================================================================
+
+password_widget = widgets.Password(
+    placeholder='Contrassenya secreta',
+    description='Password:',
+    style={'description_width': 'initial'}
 )
 
-decrypt_button = widgets.Button(description="Desencripta!", indent=True)
+load_button = widgets.Button(
+    description="🔓 Desencripta!",
+    button_style='primary',
+    tooltip='Carrega les dades encriptades'
+)
 
-def decrypt(_):
-    os.system("node ../fernet/decrypt.js " + password.value + " ../data/encrypted_nodes.txt ../data/decrypted_nodes.json")
-    os.system("node ../fernet/decrypt.js " + password.value + " ../data/encrypted_edges.txt ../data/decrypted_edges.json")
-    os.system("node ../fernet/decrypt.js " + password.value + " ../data/encrypted_unwanted.txt ../data/decrypted_unwanted.json")
+save_button = widgets.Button(
+    description="💾 Desa els canvis!",
+    button_style='success',
+    tooltip='Encripta i desa totes les dades'
+)
 
-    # At this point i don't even know which of these declarations are necessary or not
-    global nodes, nodes_names, edges, current_edges, unwanted, unwanted_person, wanted, person1, person2
-    with open('./../data/decrypted_nodes.json') as json_file:
-        nodes = json.load(json_file)
-
-    with open('./../data/decrypted_edges.json') as json_file:
-        edges = json.load(json_file)
-
-    with open('./../data/decrypted_unwanted.json') as json_file:
-        unwanted = json.load(json_file)
-
-    node_mutable_widgets()
-    edge_mutable_widgets()
-    unwanted_mutable_widgets()
-
-    print("Desencriptat!")
-
-decrypt_button.on_click(decrypt)
-
-end_button = widgets.Button(description="Encripta!", indent=True)
-
-def encrypt_and_close(_):
-    from data_generator import generate
-    generate()
-    os.system("node ../fernet/encrypt.js " + password.value + " ../data/decrypted_nodes.json ../data/encrypted_nodes.txt")
-    os.system("node ../fernet/encrypt.js " + password.value + " ../data/decrypted_edges.json ../data/encrypted_edges.txt")
-    os.system("node ../fernet/encrypt.js " + password.value + " ../data/decrypted_unwanted.json ../data/encrypted_unwanted.txt")
-    os.system("node ../fernet/encrypt.js " + password.value + " ../data/decrypted_data.json ../data/encrypted_data.txt")
-    os.system("rm ../data/decrypted*")
-
-    print("Encriptat!")
-
-end_button.on_click(encrypt_and_close)
+output_area = widgets.Output()
 
 
-node_names, current_edges = None, None # Global vars
+def on_load_click(_):
+    """Load and decrypt graph data."""
+    global graph_data, _current_password
+    
+    with output_area:
+        clear_output()
+        try:
+            _current_password = password_widget.value
+            graph_data = load_graph_data(_current_password)
+            print(f"✅ Desencriptat! Carregats {len(graph_data.nodes)} nodes i {len(graph_data.edges)} arestes")
+            
+            # Update all widgets with current data
+            _update_node_widgets()
+            _update_edge_widgets()
+            _update_unwanted_widgets()
+            _update_admin_user_widgets()
+            
+        except Exception as e:
+            print(f"❌ Error: {e}")
 
-def get_persons():
-    return person1, person2, unwanted_person
 
-# Node tools
+def on_save_click(_):
+    """Encrypt and save graph data."""
+    global graph_data
+    
+    with output_area:
+        clear_output()
+        try:
+            if graph_data is None:
+                print("❌ No hi ha dades carregades!")
+                return
+                
+            save_graph_data(graph_data, _current_password)
+            print(f"✅ Desat! {len(graph_data.nodes)} nodes i {len(graph_data.edges)} arestes encriptades")
+            print("📁 Backup creat a data/backups/")
+            
+        except Exception as e:
+            print(f"❌ Error: {e}")
 
-person = widgets.Text(
-    placeholder='Com es diu?',
+
+load_button.on_click(on_load_click)
+save_button.on_click(on_save_click)
+
+
+# =============================================================================
+# NODE WIDGETS
+# =============================================================================
+
+node_name = widgets.Text(
+    placeholder='Nom i cognoms',
     description='Nom:',
-    disabled=False
-)
-
-gender = widgets.Dropdown(
-    options=[('Femení', 'F'), ('Masculí', 'M'), ('Altres', '-')],
-    description='Sexe: ',
+    style={'description_width': 'initial'}
 )
 
 node_year = widgets.BoundedIntText(
+    value=datetime.now().year,
     min=2017,
-    max=2030,
-    step=1,
-    description='Any: ',
-    disabled=False
+    max=2035,
+    description='Any entrada:',
+    style={'description_width': 'initial'}
 )
 
-cfis = widgets.Checkbox(
+# Dynamic birth year helper
+birth_year_label = widgets.HTML(value="")
+
+def _update_birth_year_label(change):
+    entry_year = change['new']
+    # Born in year X typically enters university at year X+18
+    birth_year = entry_year - 18
+    birth_year_label.value = f"<i>🎂 Classe dels nascuts el <b>{birth_year}</b></i>"
+
+node_year.observe(_update_birth_year_label, names='value')
+# Trigger initial update
+_update_birth_year_label({'new': node_year.value})
+
+node_gender = widgets.Dropdown(
+    options=[('Femení', 'F'), ('Masculí', 'M'), ('Altres', '-')],
+    description='Gènere:',
+    style={'description_width': 'initial'}
+)
+
+node_cfis = widgets.Checkbox(
     value=False,
     description='És CFIS?',
-    disabled=False,
-    indent=True
+    indent=False
 )
 
-node_button = widgets.Button(description="Afegeix el node!", indent=True)
+add_node_button = widgets.Button(
+    description="➕ Afegeix node",
+    button_style='info'
+)
 
-def node_mutable_widgets():
-    """ Redefines the mutable node related widgets"""
+node_output = widgets.Output()
 
-    global nodes_names
-    nodes_names = {n['label'] for n in nodes}
 
-#node_mutable_widgets()
+def _update_node_widgets():
+    """Update node-related widgets after data changes."""
+    pass  # Node widgets don't need dynamic updates
 
-def add_node(_):
-    """ Adds the node specified on the widgets to the graph raw data files """
 
-    global nodes
+def _get_node_names() -> set:
+    """Get all current node names."""
+    if graph_data is None:
+        return set()
+    return graph_data.get_node_names()
 
-    if person.value in nodes_names or person.value == '':
-        raise Exception('This node already exists')
 
-    nodes.append({
-        "label": person.value,
-        "year": node_year.value,
-        "gender": gender.value,
-        "cfis": str(cfis.value).upper()
-    })
+def on_add_node_click(_):
+    """Add a new node to the graph."""
+    global graph_data
+    
+    with node_output:
+        clear_output()
+        
+        name = node_name.value.strip()
+        if not name:
+            print("❌ El nom no pot estar buit!")
+            return
+            
+        if name in _get_node_names():
+            print(f"❌ El node '{name}' ja existeix!")
+            return
+        
+        try:
+            new_node = Node(
+                label=name,
+                year=node_year.value,
+                gender=node_gender.value,
+                cfis=node_cfis.value
+            )
+            graph_data.nodes.append(new_node)
+            print(f"✅ Node '{name}' afegit correctament!")
+            
+            # Clear input
+            node_name.value = ''
+            
+            # Update edge dropdowns
+            _update_edge_widgets()
+            _update_unwanted_widgets()
+            
+        except Exception as e:
+            print(f"❌ Error: {e}")
 
-    with open('./../data/decrypted_nodes.json', 'w') as json_file:
-        json.dump(nodes, json_file, ensure_ascii=False, indent=2)
 
-    print(f'S\'ha afegit el node \"{person.value}\" correctament')
+add_node_button.on_click(on_add_node_click)
 
-    node_mutable_widgets()
-    edge_mutable_widgets()
 
-node_button.on_click(add_node)
+# =============================================================================
+# EDGE WIDGETS
+# =============================================================================
 
-# Edge tools
+person1_dropdown = widgets.Dropdown(
+    options=[],
+    description='Persona 1:',
+    style={'description_width': 'initial'}
+)
 
-person1, person2 = None, None
+person2_dropdown = widgets.Dropdown(
+    options=[],
+    description='Persona 2:',
+    style={'description_width': 'initial'}
+)
 
-points = widgets.Dropdown(
-    options=[('Lio', 1),('Manual', 2), ('Oral', 3), ('Complert', 5)],
+edge_weight = widgets.Dropdown(
+    options=[('Lio', 1), ('Manual', 2), ('Oral', 3), ('Complert', 5)],
     value=1,
-    description='Punts: ',
+    description='Punts:',
+    style={'description_width': 'initial'}
 )
 
-location = widgets.Text(
+edge_place = widgets.Text(
     placeholder='On va passar?',
     description='Lloc:',
-    disabled=False
+    style={'description_width': 'initial'}
 )
 
-month = widgets.Dropdown(
-    options=[('Gener', 'Jan'), ('Febrer', 'Feb'), ('Març', 'Mar'), ('Abril', 'Apr'), ('Maig', 'May'),
-             ('Juny', 'Jun'), ('Juliol', 'Jul'), ('Agost', 'Aug'), ('Setembre', 'Sep'),
-             ('Octubre', 'Oct'), ('Novembre', 'Nov'), ('Desembre', 'Dec'),('Unknown', '')],
+# Month mapping for defaults
+_month_map = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
+              7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
+
+edge_month = widgets.Dropdown(
+    options=[
+        ('Gener', 'Jan'), ('Febrer', 'Feb'), ('Març', 'Mar'),
+        ('Abril', 'Apr'), ('Maig', 'May'), ('Juny', 'Jun'),
+        ('Juliol', 'Jul'), ('Agost', 'Aug'), ('Setembre', 'Sep'),
+        ('Octubre', 'Oct'), ('Novembre', 'Nov'), ('Desembre', 'Dec'),
+        ('Desconegut', '')
+    ],
+    value=_month_map.get(datetime.now().month, ''),
     description='Mes:',
+    style={'description_width': 'initial'}
 )
 
 edge_year = widgets.BoundedIntText(
+    value=datetime.now().year,
     min=2017,
-    max=2025,
-    step=1,
+    max=2035,
     description='Any:',
-    disabled=False
+    style={'description_width': 'initial'}
 )
 
-repetition = widgets.Checkbox(
+edge_repeated = widgets.Checkbox(
     value=False,
     description='Van repetir?',
-    disabled=False,
-    indent=True
+    indent=False
 )
 
-relationship = widgets.Checkbox(
+edge_relationship = widgets.Checkbox(
     value=False,
-    description='Tenen o han tingut una relació?',
-    disabled=False,
-    indent=True
+    description='Tenen/han tingut relació?',
+    indent=False
 )
 
-remove = widgets.Checkbox(
+edge_comments = widgets.Text(
+    placeholder='Comentaris opcionals...',
+    description='Comentaris:',
+    style={'description_width': 'initial'}
+)
+
+edge_remove = widgets.Checkbox(
     value=False,
-    description='El que vols és eliminar l\'aresta?',
-    disabled=False,
-    indent=True
+    description='🗑️ ELIMINAR aresta existent',
+    indent=False,
+    style={'description_width': 'initial'}
 )
 
-edge_button = widgets.Button(description="Afegeix l'aresta!", indent=True)
+add_edge_button = widgets.Button(
+    description="➕ Afegeix/Modifica aresta",
+    button_style='info'
+)
 
-def edge_mutable_widgets():
-    """ Redefines the mutable edge related widgets"""
+edge_output = widgets.Output()
 
-    global current_edges
-    global person1
-    global person2
 
-    current_edges = [{e['source'], e['target']} for e in edges]
+def _update_edge_widgets():
+    """Update edge-related widgets after data changes."""
+    names = sorted(_get_node_names())
+    person1_dropdown.options = names
+    person2_dropdown.options = names
 
-    person1 = widgets.Dropdown(
-        options=list(sorted(nodes_names)),
-        description='Person 1:',
-    )
 
-    person2 = widgets.Dropdown(
-        options=list(sorted(nodes_names)),
-        description='Person 2:',
-    ) 
+def _find_edge(source: str, target: str):
+    """Find an existing edge between two people."""
+    if graph_data is None:
+        return None, None
+    
+    for i, e in enumerate(graph_data.edges):
+        if (e.source == source and e.target == target) or \
+           (e.source == target and e.target == source):
+            return i, e
+    return None, None
 
-#edge_mutable_widgets()
 
-def update_edge():
-    """ Updates the edge updatable attributes with the specified ones on
-        the widgets
-    """
-    global edges
-
-    for i, e in enumerate(edges):
-        if ((e['source'] == person1.value and e['target'] == person2.value) or
-            (e['source'] == person2.value and e['target'] == person1.value)):
-
-            if remove.value:
-                edges.pop(i)
+def on_add_edge_click(_):
+    """Add or update an edge."""
+    global graph_data
+    
+    with edge_output:
+        clear_output()
+        
+        p1 = person1_dropdown.value
+        p2 = person2_dropdown.value
+        
+        if p1 == p2:
+            print("❌ Les dues persones han de ser diferents!")
+            return
+        
+        idx, existing = _find_edge(p1, p2)
+        
+        if edge_remove.value:
+            # Delete edge
+            if existing is None:
+                print(f"❌ No existeix cap aresta entre '{p1}' i '{p2}'")
             else:
-                edges[i]["weight"] = points.value
-                edges[i]["repeated"] = str(repetition.value).upper()
-                edges[i]["relationship"] = str(relationship.value).upper()
+                graph_data.edges.pop(idx)
+                print(f"🗑️ Aresta entre '{p1}' i '{p2}' eliminada!")
+                edge_remove.value = False
+        
+        elif existing is not None:
+            # Update existing edge
+            existing.weight = edge_weight.value
+            existing.repeated = edge_repeated.value
+            existing.relationship = edge_relationship.value
+            print(f"✏️ Aresta entre '{p1}' i '{p2}' actualitzada!")
+        
+        else:
+            # Create new edge
+            try:
+                new_edge = Edge(
+                    source=p1,
+                    target=p2,
+                    weight=edge_weight.value,
+                    place=edge_place.value,
+                    month=edge_month.value,
+                    year=edge_year.value,
+                    repeated=edge_repeated.value,
+                    relationship=edge_relationship.value,
+                    comments=edge_comments.value or None
+                )
+                graph_data.edges.append(new_edge)
+                print(f"✅ Aresta entre '{p1}' i '{p2}' afegida!")
+                
+                # Clear inputs
+                edge_place.value = ''
+                edge_comments.value = ''
+                
+            except Exception as e:
+                print(f"❌ Error: {e}")
 
-            break
 
-def add_edge(_):
-    """ Adds or updates the edge specified on the widgets on the graph raw
-        data files
+add_edge_button.on_click(on_add_edge_click)
+
+
+# =============================================================================
+# ANONYMIZATION WIDGETS
+# =============================================================================
+
+unwanted_dropdown = widgets.Dropdown(
+    options=[],
+    description='Persona:',
+    style={'description_width': 'initial'}
+)
+
+anonymize_button = widgets.Button(
+    description="👤 Anonimitza",
+    button_style='warning',
+    tooltip='La persona apareixerà com "Anònim X" al graf'
+)
+
+unwanted_output = widgets.Output()
+
+
+def _update_unwanted_widgets():
+    """Update unwanted-related widgets after data changes."""
+    if graph_data is None:
+        return
+    
+    # Show only non-anonymized people
+    already_unwanted = set(graph_data.unwanted)
+    available = sorted(_get_node_names() - already_unwanted)
+    unwanted_dropdown.options = available
+
+
+def on_anonymize_click(_):
+    """Add a person to the unwanted list."""
+    global graph_data
+    
+    with unwanted_output:
+        clear_output()
+        
+        person = unwanted_dropdown.value
+        if not person:
+            print("❌ Selecciona una persona!")
+            return
+        
+        if person in graph_data.unwanted:
+            print(f"❌ '{person}' ja està anonimitzat!")
+            return
+        
+        graph_data.unwanted.append(person)
+        print(f"✅ '{person}' serà anonimitzat com 'Anònim' al graf públic")
+        
+        _update_unwanted_widgets()
+
+
+anonymize_button.on_click(on_anonymize_click)
+
+
+# =============================================================================
+# EDGE SEARCH/MODIFY WIDGETS (separate from add)
+# =============================================================================
+
+search_person1 = widgets.Dropdown(
+    options=[],
+    description='Persona 1:',
+    style={'description_width': 'initial'}
+)
+
+search_person2 = widgets.Dropdown(
+    options=[],
+    description='Persona 2:',
+    style={'description_width': 'initial'}
+)
+
+search_button = widgets.Button(
+    description="🔍 Buscar aresta",
+    button_style='info'
+)
+
+modify_weight = widgets.Dropdown(
+    options=[('Lio', 1), ('Manual', 2), ('Oral', 3), ('Complert', 5)],
+    value=1,
+    description='Punts:',
+    style={'description_width': 'initial'}
+)
+
+modify_year = widgets.BoundedIntText(
+    value=datetime.now().year,
+    min=2017,
+    max=2035,
+    description='Any:',
+    style={'description_width': 'initial'}
+)
+
+modify_month = widgets.Dropdown(
+    options=[
+        ('Gener', 'Jan'), ('Febrer', 'Feb'), ('Març', 'Mar'),
+        ('Abril', 'Apr'), ('Maig', 'May'), ('Juny', 'Jun'),
+        ('Juliol', 'Jul'), ('Agost', 'Aug'), ('Setembre', 'Sep'),
+        ('Octubre', 'Oct'), ('Novembre', 'Nov'), ('Desembre', 'Dec'),
+        ('Desconegut', '')
+    ],
+    description='Mes:',
+    style={'description_width': 'initial'}
+)
+
+modify_repeated = widgets.Checkbox(
+    value=False,
+    description='Van repetir?',
+    indent=False
+)
+
+modify_relationship = widgets.Checkbox(
+    value=False,
+    description='Tenen/han tingut relació?',
+    indent=False
+)
+
+modify_place = widgets.Text(
+    placeholder='On va passar?',
+    description='Lloc:',
+    style={'description_width': 'initial'}
+)
+
+modify_comments = widgets.Text(
+    placeholder='Comentaris...',
+    description='Comentaris:',
+    style={'description_width': 'initial'}
+)
+
+modify_button = widgets.Button(
+    description="✏️ Modificar",
+    button_style='warning'
+)
+
+delete_button = widgets.Button(
+    description="🗑️ Eliminar",
+    button_style='danger'
+)
+
+search_output = widgets.Output()
+
+
+def _update_search_widgets():
+    """Update search dropdowns."""
+    names = sorted(_get_node_names())
+    search_person1.options = names
+    search_person2.options = names
+
+
+def on_search_click(_):
+    """Search for an edge."""
+    with search_output:
+        clear_output()
+        
+        p1 = search_person1.value
+        p2 = search_person2.value
+        
+        if not p1 or not p2:
+            print("❌ Selecciona les dues persones")
+            return
+        
+        idx, edge = _find_edge(p1, p2)
+        
+        if edge is None:
+            print(f"❌ No existeix cap aresta entre '{p1}' i '{p2}'")
+        else:
+            print(f"✅ Aresta trobada!")
+            print(f"   Punts: {edge.weight}")
+            print(f"   Lloc: {edge.place or 'N/A'}")
+            print(f"   Data: {edge.month or '?'} {edge.year or '?'}")
+            print(f"   Repetit: {'Sí' if edge.repeated else 'No'}")
+            print(f"   Relació: {'Sí' if edge.relationship else 'No'}")
+            if edge.comments:
+                print(f"   Comentaris: {edge.comments}")
+            
+            # Pre-fill modify widgets
+            modify_weight.value = edge.weight
+            if edge.year:
+                modify_year.value = edge.year
+            if edge.month:
+                modify_month.value = edge.month
+            modify_repeated.value = edge.repeated
+            modify_relationship.value = edge.relationship
+            modify_place.value = edge.place or ''
+            modify_comments.value = edge.comments or ''
+
+
+def on_modify_click(_):
+    """Modify an existing edge."""
+    global graph_data
+    
+    with search_output:
+        clear_output()
+        
+        p1 = search_person1.value
+        p2 = search_person2.value
+        idx, edge = _find_edge(p1, p2)
+        
+        if edge is None:
+            print(f"❌ No existeix cap aresta entre '{p1}' i '{p2}'")
+        else:
+            edge.weight = modify_weight.value
+            edge.year = modify_year.value
+            edge.month = modify_month.value
+            edge.repeated = modify_repeated.value
+            edge.relationship = modify_relationship.value
+            edge.place = modify_place.value or ''
+            edge.comments = modify_comments.value or None
+            print(f"✅ Aresta entre '{p1}' i '{p2}' actualitzada!")
+
+
+def on_delete_click(_):
+    """Delete an edge."""
+    global graph_data
+    
+    with search_output:
+        clear_output()
+        
+        p1 = search_person1.value
+        p2 = search_person2.value
+        idx, edge = _find_edge(p1, p2)
+        
+        if edge is None:
+            print(f"❌ No existeix cap aresta entre '{p1}' i '{p2}'")
+        else:
+            graph_data.edges.pop(idx)
+            print(f"🗑️ Aresta entre '{p1}' i '{p2}' eliminada!")
+
+
+search_button.on_click(on_search_click)
+modify_button.on_click(on_modify_click)
+delete_button.on_click(on_delete_click)
+
+
+# =============================================================================
+# DISPLAY HELPERS (for notebook)
+# =============================================================================
+
+def _try_auto_load():
+    """Attempt to load password from .env file and auto-decrypt."""
+    try:
+        env_path = Path(".env")
+        if not env_path.exists():
+            return
+
+        # Simple manual parsing to avoid dependencies
+        content = env_path.read_text(encoding="utf-8")
+        for line in content.splitlines():
+            line = line.strip()
+            if line.startswith("PASSWORD="):
+                pwd = line.split("=", 1)[1].strip()
+                # Remove quotes if present
+                if (pwd.startswith('"') and pwd.endswith('"')) or \
+                   (pwd.startswith("'") and pwd.endswith("'")):
+                    pwd = pwd[1:-1]
+                
+                if pwd and pwd != "your_secret_password_here":
+                    password_widget.value = pwd
+                    # Trigger load
+                    on_load_click(None)
+                    print("⚡ Auto-login des de .env")
+                break
+    except Exception as e:
+        print(f"⚠️ Error llegint .env: {e}")
+
+def show_load_section():
+    """Display the password and load/save section."""
+    # Trigger auto-load after widget creation
+    widgets.jslink((password_widget, 'value'), (password_widget, 'value')) # Hack to ensure sync
+    
+    # Use a small delay or immediate call? Immediate is fine for widgets.
+    # We return the VBox, but we can also trigger the logic.
+    # To be safe, we might want to defer it, but usually immediate works 
+    # if the widget exists.
+    
+    box = widgets.VBox([
+        widgets.HTML("<h2>🔐 Carregar Dades</h2>"),
+        password_widget,
+        widgets.HBox([load_button, save_button]),
+        output_area
+    ])
+    
+    # Try auto-load effectively when this is called
+    _try_auto_load()
+    
+    return box
+
+
+def show_node_section():
+    """Display the add node section with vertical layout and birth year helper."""
+    return widgets.VBox([
+        widgets.HTML("<h2>👤 Afegir Node (Persona)</h2>"),
+        node_name,
+        node_year,
+        birth_year_label,
+        node_gender,
+        node_cfis,
+        add_node_button,
+        node_output
+    ])
+
+
+def show_edge_search_section(admin_mode: bool = False):
     """
+    Display the edge search section.
+    If admin_mode=True, allows Modify and Delete.
+    If admin_mode=False, only allows View.
+    """
+    # Update dropdowns
+    _update_search_widgets()
+    
+    children = [
+        widgets.HTML("<h2>🔍 Buscar Aresta" + (" / Modificar / Eliminar" if admin_mode else "") + "</h2>"),
+        widgets.HBox([search_person1, search_person2]),
+        search_button
+    ]
+    
+    if admin_mode:
+        children.extend([
+            widgets.HTML("<hr><b>Modificar:</b>"),
+            widgets.HBox([modify_year, modify_month]),
+            modify_weight,
+            modify_place,
+            widgets.HBox([modify_repeated, modify_relationship]),
+            modify_comments,
+            widgets.HBox([modify_button, delete_button])
+        ])
+    
+    children.append(search_output)
+    
+    # Hidden hack to update admin user widgets when this section is shown/used
+    # widgets.interactive_output(lambda: _update_admin_user_widgets(), {}) 
+    
+    return widgets.VBox(children)
 
-    global edges
 
-    if person1.value == person2.value:
-        raise Exception('Both persons need to be different')
-
-    if {person1.value, person2.value} in current_edges:
-        update_edge()
-
-    else:
-        if remove.value:
-            raise Exception('The edge you want to remove is not in the graph')
-        edges.append({
-            "source": person1.value,
-            "target": person2.value,
-            "weight": points.value,
-            "place": location.value,
-            "month": month.value,
-            "year": edge_year.value,
-            "repeated": str(repetition.value).upper(),
-            "relationship": str(relationship.value).upper()
-        })
-
-    with open('./../data/decrypted_edges.json', 'w') as json_file:
-        json.dump(edges, json_file, ensure_ascii=False, indent=2)
-
-    print(f'La aresta entre els nodes \"{person1.value}\" i \"{person2.value}\" ha estat', 'eliminada' if remove.value else 'afegida', 'amb èxit')
-
-    edge_mutable_widgets()
+def show_edge_add_section():
+    """Display the add new edge section."""
+    return widgets.VBox([
+        widgets.HTML("<h2>➕ Afegir Nova Aresta</h2>"),
+        # Row 1: Persons
+        widgets.HBox([person1_dropdown, person2_dropdown]),
+        # Row 2: Year, Month
+        widgets.HBox([edge_year, edge_month]),
+        # Row 3: Points
+        edge_weight,
+        # Row 4: Place
+        edge_place,
+        # Row 5: Other fields
+        edge_repeated,
+        edge_relationship,
+        # Row 6: Comments
+        edge_comments,
+        # Button
+        add_edge_button,
+        edge_output
+    ])
 
 
-edge_button.on_click(add_edge)
+def show_anonymize_section():
+    """Display the anonymization section."""
+    return widgets.VBox([
+        widgets.HTML("<h2>🕵️ Anonimitzar Persona</h2>"),
+        widgets.HTML("<p><em>La persona apareixerà com 'Anònim X' al graf públic.</em></p>"),
+        unwanted_dropdown,
+        anonymize_button,
+        unwanted_output
+    ])
 
-# Unwanted tools
+# =============================================================================
+# ADMIN WIDGETS (JSON Sync & User Delete)
+# =============================================================================
 
-wanted, unwanted_person = None, None
+export_json_button = widgets.Button(
+    description="📤 Exportar a JSON",
+    button_style='info',
+    tooltip='Desa les dades actuals a un fitxer JSON desencriptat'
+)
 
-def unwanted_mutable_widgets():
-    """ Redefines the mutable unwanted nodes related widgets"""
+import_json_button = widgets.Button(
+    description="📥 Importar de JSON",
+    button_style='warning',
+    tooltip='Carrega les dades del fitxer JSON i sobreescriu la memòria'
+)
 
-    global unwanted_person
-    global wanted
+json_output = widgets.Output()
 
-    wanted = nodes_names.difference(unwanted)
+def on_export_json_click(_):
+    """Export current graph data to decrypted JSON file."""
+    global graph_data
+    with json_output:
+        clear_output()
+        if graph_data is None:
+            print("❌ No hi ha dades carregades! Desencripta primer.")
+            return
 
-    unwanted_person = widgets.Dropdown(
-        options=list(sorted(wanted)),
-        description='Nom: ',
-    )
+        try:
+            file_path = DATA_DIR / "decrypted_graph.json"
+            # Prepare data same as save logic but meant for manual edit
+            data_dict = {
+                "nodes": [n.model_dump() for n in graph_data.nodes],
+                "edges": [e.model_dump() for e in graph_data.edges],
+                "unwanted": graph_data.unwanted
+            }
+            file_path.write_text(json.dumps(data_dict, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"✅ Exportat correctament a:")
+            print(f"   {file_path}")
+            print("⚠️ ATENCIÓ: Aquest fitxer conté dades personals DE SENSE ENCRIPTAR.")
+        except Exception as e:
+            print(f"❌ Error exportant: {e}")
 
-#unwanted_mutable_widgets()
+def on_import_json_click(_):
+    """Import graph data from decrypted JSON file."""
+    global graph_data
+    with json_output:
+        clear_output()
+        file_path = DATA_DIR / "decrypted_graph.json"
+        if not file_path.exists():
+            print(f"❌ No s'ha trobat el fitxer: {file_path}")
+            return
+        
+        try:
+            content = file_path.read_text(encoding="utf-8")
+            data = json.loads(content)
+            
+            # Reconstruct GraphData
+            new_graph = GraphData(
+                nodes=[Node(**n) for n in data.get("nodes", [])],
+                edges=[Edge(**e) for e in data.get("edges", [])],
+                unwanted=data.get("unwanted", [])
+            )
+            
+            graph_data = new_graph
+            print(f"✅ Importat correctament del JSON!")
+            print(f"   {len(graph_data.nodes)} nodes, {len(graph_data.edges)} arestes")
+            
+            # Refresh all widgets
+            _update_node_widgets()
+            _update_edge_widgets()
+            _update_unwanted_widgets()
+            _update_admin_user_widgets()
+            
+            # Prompt to delete the decrypted file
+            print("")
+            print("⚠️ SEGURETAT: Vols ELIMINAR el fitxer JSON desencriptat?")
+            print("   (Recomanat per evitar problemes de versionat i seguretat)")
+            display(delete_json_button)
+            
+        except Exception as e:
+            print(f"❌ Error important JSON: {e}")
 
-unwanted_button = widgets.Button(description="Anonimitza el node...")
+# Delete JSON button (shown after import)
+delete_json_button = widgets.Button(
+    description="🗑️ Eliminar decrypted_graph.json",
+    button_style='danger',
+    tooltip='Elimina el fitxer JSON desencriptat'
+)
 
-def add_unwanted(_):
-    """ Adds the node specified on the widget to unwanted.json data file """
+def on_delete_json_click(_):
+    """Delete the decrypted JSON file."""
+    with json_output:
+        clear_output()
+        file_path = DATA_DIR / "decrypted_graph.json"
+        try:
+            if file_path.exists():
+                file_path.unlink()
+                print("✅ Fitxer decrypted_graph.json eliminat correctament!")
+            else:
+                print("ℹ️ El fitxer ja no existeix.")
+        except Exception as e:
+            print(f"❌ Error eliminant: {e}")
 
-    unwanted['unwanted'].append(unwanted_person.value)
+# Clear existing handlers to prevent duplicates
+delete_json_button._click_handlers.callbacks = []
+delete_json_button.on_click(on_delete_json_click)
 
-    with open('./../data/decrypted_unwanted.json', 'w') as json_file:
-        json.dump(unwanted, json_file, ensure_ascii=False, indent=2)
 
-    print(f'S\'ha anonimitzat el node \"{unwanted_person.value}\" correctament')
+export_json_button.on_click(on_export_json_click)
+import_json_button.on_click(on_import_json_click)
 
-    unwanted_mutable_widgets()
 
-unwanted_button.on_click(add_unwanted)
+# ADMIN USER DELETE
+
+admin_user_dropdown = widgets.Dropdown(
+    options=[],
+    description='Usuari:',
+    style={'description_width': 'initial'}
+)
+
+delete_user_button = widgets.Button(
+    description="💀 ELIMINAR USUARI",
+    button_style='danger',
+    tooltip='Elimina el node i totes les seves arestes permanentment'
+)
+
+admin_user_output = widgets.Output()
+
+def _update_admin_user_widgets():
+    """Update admin dropdowns."""
+    if graph_data:
+        admin_user_dropdown.options = sorted(_get_node_names())
+
+def on_delete_user_click(_):
+    """Completely delete a user and their edges."""
+    global graph_data
+    with admin_user_output:
+        clear_output()
+        
+        user = admin_user_dropdown.value
+        if not user:
+            print("❌ Selecciona un usuari!")
+            return
+            
+        # Confirmation check (simple button state for now, assuming admin implies caution)
+        # In a real app we might ask for confirmation. Here we just process.
+        
+        if graph_data is None:
+            return
+
+        print(f"⌛ Processant eliminació de '{user}'...")
+        
+        # 1. Remove Edges
+        initial_edges = len(graph_data.edges)
+        graph_data.edges = [e for e in graph_data.edges if e.source != user and e.target != user]
+        removed_edges = initial_edges - len(graph_data.edges)
+        
+        # 2. Remove Node
+        initial_nodes = len(graph_data.nodes)
+        graph_data.nodes = [n for n in graph_data.nodes if n.label != user]
+        removed_nodes = initial_nodes - len(graph_data.nodes)
+        
+        # 3. Remove from Unwanted
+        if user in graph_data.unwanted:
+            graph_data.unwanted.remove(user)
+            print("   - Eliminat de la llista d'anonimització")
+            
+        print(f"✅ Usuari '{user}' eliminat!")
+        print(f"   - Nodes eliminats: {removed_nodes}")
+        print(f"   - Arestes eliminades: {removed_edges}")
+        
+        # Update widgets
+        _update_node_widgets()
+        _update_edge_widgets()
+        _update_unwanted_widgets()
+        _update_admin_user_widgets()
+
+delete_user_button.on_click(on_delete_user_click)
+
+
+def show_admin_json_section():
+    """Display JSON sync tools."""
+    return widgets.VBox([
+        widgets.HTML("<h2>🔄 Sincronització JSON</h2>"),
+        widgets.HTML("<p>Permet editar les dades manualment en un fitxer de text.</p>"),
+        widgets.HBox([export_json_button, import_json_button]),
+        json_output
+    ])
+
+def show_admin_user_section():
+    """Display user deletion tools."""
+    _update_admin_user_widgets()
+    return widgets.VBox([
+        widgets.HTML("<h2>💀 Zona de Perill: Eliminar Usuari</h2>"),
+        widgets.HTML("""
+            <div style='background-color: #ffebee; padding: 10px; border-left: 5px solid #f44336;'>
+                <p><b>ATENCIÓ:</b> Aquesta acció eliminarà <b>permanentment</b> l'usuari i <b>totes</b> les seves connexions.</p>
+                <p>Si només vols que no aparegui el nom al graf públic, fes servir l'opció <b>"Anonimitzar"</b>.</p>
+            </div>
+        """),
+        widgets.HBox([admin_user_dropdown, delete_user_button]),
+        admin_user_output
+    ])
+
+
+
+
+
+# =============================================================================
+# CONVENIENCE EXPORTS
+# =============================================================================
+
+password = password_widget
+decrypt_button = load_button
+end_button = save_button
+
+def get_persons():
+    """Legacy function for edge widget dropdowns."""
+    return person1_dropdown, person2_dropdown, unwanted_dropdown
+

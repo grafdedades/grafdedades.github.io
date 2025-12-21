@@ -1,0 +1,14 @@
+# Jekyll Configuration
+# Exclude files from being served by GitHub Pages
+
+exclude:
+  - data/graph_data.enc      # Admin source of truth (contains real names)
+  - data/backups/            # Backups
+  - Admin-Notebook.ipynb     # Admin tool
+  - Graph-updater.ipynb      # Graph updater
+  - .env                     # Local config
+  - .env.example
+  - requirements.txt
+  - tools/                   # Python tools not needed by frontend
+  - .gitignore
+  - README.md                # (Optional, but usually served)
