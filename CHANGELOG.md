@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.3] - 2026-01-19
+
+### Documentation
+- **New System Docs**: Added `SUGGESTIONS_SYSTEM.md` detailing the suggestion and admin review architecture.
+- **Cleanup**: Removed incomplete `new-arch.md`.
+- **Readme**: Updated `README.md` to reference the new system documentation.
+
 ## [2.3.2] - 2024-12-20
 
 ### Added

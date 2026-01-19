@@ -62,6 +62,8 @@ python -m http.server 3000
 
 ## Architecture
 
+For details on the Suggestion & Admin Review system, see **[SUGGESTIONS_SYSTEM.md](SUGGESTIONS_SYSTEM.md)**.
+
 | Component | Technology |
 |-----------|------------|
 | Visualization | D3.js v3.5.5 |
