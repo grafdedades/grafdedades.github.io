@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugerir Canvis - Graf de Dades</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/lux/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .type-select { cursor: pointer; opacity: 0.6; transition: 0.2s; border: 1px solid #ddd; }
+        .type-select:hover, .type-select.active { opacity: 1; border: 2px solid #007bff; background: #f8f9fa; }
+        
+        /* Autocomplete styles */
+        .autocomplete-suggestions { border: 1px solid #999; background: #fff; overflow: auto; max-height: 200px; position: absolute; z-index: 9999; width: 100%; }
+        .autocomplete-suggestion { padding: 5px 10px; cursor: pointer; }
+        .autocomplete-suggestion:hover { background: #f0f0f0; }
+
+        /* Cart styles */
+        .cart-item { border-left: 5px solid #ccc; background: #fff; padding: 15px; margin-bottom: 10px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .cart-item.type-node { border-left-color: #28a745; }
+        .cart-item.type-edge { border-left-color: #17a2b8; }
+        .cart-remove { position: absolute; top: 10px; right: 15px; color: #dc3545; cursor: pointer; font-size: 1.2rem; }
+        .cart-remove:hover { color: #bd2130; }
+
+        .step-header { border-bottom: 2px solid #f0f0f0; margin-bottom: 20px; padding-bottom: 10px; }
+    </style>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="graph.html">
+                <i class="fa fa-project-diagram mr-2"></i>GRAF DE DADES
+            </a>
+            <div class="ml-auto">
+                <button class="btn btn-outline-light btn-sm" onclick="location.href='graph.html'">Tornar al Graf</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5 mb-5" style="max-width: 800px;">
+        
+        <!-- Auth Loading -->
+        <div id="loading-auth" class="text-center py-5">
+            <i class="fa fa-spinner fa-spin fa-3x text-muted"></i>
+            <p class="mt-3 text-muted">Verificant credencials...</p>
+        </div>
+
+        <!-- Unauth View -->
+        <div id="unauth-msg" class="text-center py-5" style="display:none;">
+            <div class="alert alert-warning d-inline-block p-4 shadow-sm">
+                <h4><i class="fa fa-lock"></i> Accés Restringit</h4>
+                <p>Has d'iniciar sessió amb GitHub per enviar suggeriments.</p>
+                <button class="btn btn-dark mt-2" onclick="Auth.login()">Login amb GitHub</button>
+            </div>
+        </div>
+
+        <!-- Main Form -->
+        <div id="main-content" style="display:none;">
+            
+            <!-- SECTION 1: ADD ITEM -->
+            <div class="card shadow-sm mb-5">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h4 class="mb-0 text-primary"><i class="fa fa-plus-circle"></i> Afegeix Nodos o Connexions</h4>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Type Selector -->
+                    <div class="d-flex justify-content-center gap-4 mb-4">
+                        <div class="card p-3 m-2 type-select active text-center w-50 shadow-sm" onclick="setMode('node')" id="mode-node">
+                            <i class="fa fa-user fa-2x mb-2 text-success"></i>
+                            <h5 class="mb-0">Persona</h5>
+                            <small class="text-muted">Nou Node</small>
+                        </div>
+                        <div class="card p-3 m-2 type-select text-center w-50 shadow-sm" onclick="setMode('edge')" id="mode-edge">
+                            <i class="fa fa-link fa-2x mb-2 text-info"></i>
+                            <h5 class="mb-0">Connexió</h5>
+                            <small class="text-muted">Entre persones</small>
+                        </div>
+                    </div>
+
+                    <form id="item-form">
+                        <input type="hidden" id="current-mode" value="node">
+                        
+                        <!-- NODE FIELDS -->
+                        <div id="fields-node">
+                            <div class="form-group">
+                                <label>Nom complet <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg" id="node-name" placeholder="Ex: Maria García">
+                                <small class="form-text text-muted">Asegura't que no existeix ja usant el cercador del graf.</small>
+                            </div>
+                            <div class="form-row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Any (Promoció)</label>
+                                    <input type="number" class="form-control" id="node-year" placeholder="2024" min="2000" max="2030">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Gènere</label>
+                                    <select class="form-control" id="node-gender">
+                                        <option value="F">Dona</option>
+                                        <option value="M">Home</option>
+                                        <option value="-">Altre</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="node-cfis">
+                                    <label class="custom-control-label" for="node-cfis">És CFIS?</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EDGE FIELDS -->
+                        <div id="fields-edge" style="display:none;">
+                            <div class="form-group position-relative">
+                                <label>Persona 1 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg autocomplete" id="link-source" placeholder="Comença a escriure...">
+                            </div>
+                            <div class="form-group position-relative">
+                                <label>Persona 2 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg autocomplete" id="link-target" placeholder="Comença a escriure...">
+                            </div>
+                            <div class="form-row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Tipus de relació</label>
+                                    <select class="form-control" id="link-weight">
+                                        <option value="1">Lio (1 punt)</option>
+                                        <option value="2">Manual (2 punts)</option>
+                                        <option value="3">Oral (3 punts)</option>
+                                        <option value="5">Complert (5 punts)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Any</label>
+                                    <input type="number" class="form-control" id="link-year" placeholder="2024">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Comentaris (Lloc, detalls...)</label>
+                                <input type="text" class="form-control" id="link-comments" placeholder="Opcional">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg btn-block mt-4 shadow-sm">
+                            <i class="fa fa-plus"></i> Afegeix a la Llista
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SECTION 2: LIST & ACTIONS -->
+            <div class="card border-0 bg-transparent">
+                <div class="card-header bg-transparent border-0 pl-0 pb-2">
+                    <h4 class="mb-0 text-dark"><i class="fa fa-list"></i> La teva Llista d'enviament</h4>
+                </div>
+                
+                <div id="cart-list" class="mb-4">
+                    <div class="text-center py-5 bg-white rounded shadow-sm border text-muted" id="empty-cart-msg">
+                        <i class="fa fa-inbox fa-3x mb-3 opacity-50"></i>
+                        <p>No hi ha elements pendents.<br>Utilitza el formulari de dalt per afegir-ne.</p>
+                    </div>
+                </div>
+
+                <div class="text-right">
+                    <button id="btn-proceed" class="btn btn-info btn-lg px-5 shadow" disabled onclick="openSubmitModal()">
+                        Procedir a l'enviament <i class="fa fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Submit Modal -->
+        <div class="modal fade" id="submitModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title">Finalitzar Enviament</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <p>Estàs a punt d'enviar <strong><span id="modal-count">0</span> elements</strong>.</p>
+                        <p class="small text-muted mb-4">La teva col·laboració és molt valuosa. Per validar la veracitat de les dades i mantenir la qualitat del graf, necessitem el teu nom real.</p>
+                        
+                        <div class="form-group">
+                            <label><strong>Nom i Cognoms (Privat)</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control bg-light" id="meta-realname" placeholder="La teva identitat...">
+                            <small class="text-muted"><i class="fa fa-lock"></i> No es publicarà. Només visible per admins.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Comentaris Generals</label>
+                            <textarea class="form-control" id="meta-comments" rows="3" placeholder="Algun detall extra sobre aquest paquet de canvis?"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel·lar</button>
+                        <button type="button" class="btn btn-success px-4" onclick="submitAll()">
+                            <i class="fa fa-paper-plane mr-2"></i> Enviar Tot
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div class="modal fade" id="successModal" tabindex="-1" role="dialog" data-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content text-center p-5 border-0 shadow-lg">
+                    <div class="mb-4">
+                        <div class="d-inline-block rounded-circle p-4 bg-success text-white">
+                            <i class="fa fa-check fa-3x"></i>
+                        </div>
+                    </div>
+                    <h2 class="mb-3">Rebut!</h2>
+                    <p class="lead text-muted mb-4">Gràcies per la teva col·laboració. Un administrador revisarà i aprovarà els canvis aviat.</p>
+                    <button type="button" class="btn btn-primary btn-lg px-5" onclick="location.reload()">D'acord</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="/fernet/fernetBrowser.js"></script> 
+
+    <script>
+        // --- STATE ---
+        let CART = [];
+        let GRAPH_NODES = []; 
+
+        // --- GLOBAL FUNCTIONS ---
+        window.removeFromCart = function(index) {
+            CART.splice(index, 1);
+            renderCart();
+        }
+
+        window.openSubmitModal = function() {
+            if (CART.length === 0) return;
+            document.getElementById('modal-count').innerText = CART.length;
+            $('#submitModal').modal('show');
+        }
+
+        window.submitAll = async function() {
+            const realName = document.getElementById('meta-realname').value.trim();
+            if (!realName) {
+                alert("Si us plau, introdueix el teu nom real per validar (confidencial).");
+                return;
+            }
+
+            // Close modal and show loading state on button
+            $('#submitModal').modal('hide');
+            // We can show a loading overlay or just change the proceed button state, 
+            // but the proceed button is behind the modal. 
+            // Let's us a simple full screen loading or alert. 
+            // Actually, best to reuse proceed button state or a global spinner.
+            
+            // Re-open success/loading feedback? 
+            // Let's change the submit button in the modal to loading state before hiding?
+            // Simplified: just wait.
+            
+            const bundle = {
+                user: Auth.getUser(),
+                meta: {
+                    realName: realName,
+                    comment: document.getElementById('meta-comments').value
+                },
+                items: CART
+            };
+            
+            try {
+                const response = await fetch(CONFIG.scriptUrl + '?action=save_suggestion', {
+                    method: 'POST',
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(bundle)
+                });
+                
+                const res = JSON.parse(await response.text());
+
+                if (res.status === 'success') {
+                    $('#successModal').modal('show');
+                    CART = [];
+                    renderCart();
+                    document.getElementById('meta-realname').value = '';
+                    document.getElementById('meta-comments').value = '';
+                } else {
+                    alert('Error del servidor: ' + res.message);
+                    $('#submitModal').modal('show'); // Reopen on error
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert('Error enviant: ' + err.message);
+                $('#submitModal').modal('show');
+            }
+        };
+
+        window.setMode = function(mode) {
+            document.getElementById('current-mode').value = mode;
+            document.querySelectorAll('.type-select').forEach(el => el.classList.remove('active'));
+            document.getElementById('mode-'+mode).classList.add('active');
+
+            if (mode === 'node') {
+                document.getElementById('fields-node').style.display = 'block';
+                document.getElementById('fields-edge').style.display = 'none';
+            } else {
+                document.getElementById('fields-node').style.display = 'none';
+                document.getElementById('fields-edge').style.display = 'block';
+            }
+        };
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (Auth.isAuthenticated()) {
+                document.getElementById('loading-auth').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+            } else {
+                document.getElementById('loading-auth').style.display = 'none';
+                document.getElementById('unauth-msg').style.display = 'block';
+                return;
+            }
+
+            const encData = sessionStorage.getItem('pass'); 
+            if (encData) {
+                try {
+                    const response = await fetch('data/encrypted_data.txt');
+                    const text = await response.text();
+                    var secret = new fernet.Secret(encData.repeat(50).substring(0,43) + "=");
+                    var token = new fernet.Token({secret: secret, token: text, ttl: 0});
+                    const graph = JSON.parse(token.decode());
+                    GRAPH_NODES = graph.nodes.map(n => n.label);
+                } catch (e) { console.warn("Autocomplete load failed", e); }
+            }
+            setupAutocomplete();
+        });
+
+        // --- FORM ---
+        document.getElementById('item-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const mode = document.getElementById('current-mode').value;
+            let item = null;
+            
+            if (mode === 'node') {
+                const name = document.getElementById('node-name').value.trim();
+                if (!name) return alert('El nom és obligatori');
+                item = {
+                    type: 'node',
+                    description: name,
+                    details: 'Nou Node',
+                    payload: {
+                        label: name,
+                        year: parseInt(document.getElementById('node-year').value) || new Date().getFullYear(),
+                        gender: document.getElementById('node-gender').value,
+                        cfis: document.getElementById('node-cfis').checked
+                    }
+                };
+            } else {
+                const source = document.getElementById('link-source').value.trim();
+                const target = document.getElementById('link-target').value.trim();
+                if (!source || !target) return alert('Els noms són obligatoris');
+                item = {
+                    type: 'edge',
+                    description: `${source} ↔ ${target}`,
+                    details: 'Nova Connexió',
+                    payload: {
+                        source: source,
+                        target: target,
+                        year: parseInt(document.getElementById('link-year').value) || new Date().getFullYear(),
+                        weight: parseInt(document.getElementById('link-weight').value),
+                        comments: document.getElementById('link-comments').value
+                    }
+                };
+            }
+
+            CART.push(item);
+            renderCart();
+            e.target.reset();
+        });
+
+        function renderCart() {
+            const container = document.getElementById('cart-list');
+            const emptyMsg = document.getElementById('empty-cart-msg');
+            const btn = document.getElementById('btn-proceed');
+
+            // Clear list but keep empty msg if needed
+            const items = container.querySelectorAll('.cart-item');
+            items.forEach(i => i.remove());
+
+            if (CART.length === 0) {
+                emptyMsg.style.display = 'block';
+                btn.disabled = true;
+                return;
+            }
+            emptyMsg.style.display = 'none';
+            btn.disabled = false;
+
+            CART.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = `cart-item type-${item.type}`;
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">${item.description}</h5>
+                            <span class="badge badge-pill badge-${item.type === 'node' ? 'success' : 'info'}">${item.details}</span>
+                        </div>
+                        <i class="fa fa-trash cart-remove" onclick="removeFromCart(${idx})" title="Eliminar"></i>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function setupAutocomplete() {
+            if (GRAPH_NODES.length === 0) return;
+            const inputs = document.querySelectorAll('.autocomplete');
+            inputs.forEach(inp => {
+                inp.addEventListener('input', function(e) {
+                    const val = this.value;
+                    closeAll(this);
+                    if (!val) return;
+                    
+                    const list = document.createElement("DIV");
+                    list.className = "autocomplete-suggestions shadow-sm";
+                    this.parentNode.appendChild(list);
+                    
+                    let matches = 0;
+                    for (let i = 0; i < GRAPH_NODES.length; i++) {
+                        if (matches > 8) break;
+                        if (GRAPH_NODES[i].toUpperCase().includes(val.toUpperCase())) {
+                            const item = document.createElement("DIV");
+                            item.className = "autocomplete-suggestion";
+                            item.innerHTML = GRAPH_NODES[i].replace(new RegExp(val, "gi"), "<strong>$&</strong>");
+                            item.addEventListener("click", () => {
+                                inp.value = GRAPH_NODES[i];
+                                closeAll();
+                            });
+                            list.appendChild(item);
+                            matches++;
+                        }
+                    }
+                });
+            });
+            
+            function closeAll(elm) {
+                document.querySelectorAll(".autocomplete-suggestions").forEach(x => {
+                    if (x.parentNode.querySelector('input') !== elm) x.remove();
+                });
+            }
+            document.addEventListener("click", e => closeAll(e.target));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Graf de Dades</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/lux/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        .bundle-card { margin-bottom: 25px; border-top: 4px solid #6f42c1; }
+        .item-row { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .item-row:last-child { border-bottom: none; }
+        .badge-node { background-color: #28a745; color: white; }
+        .badge-edge { background-color: #17a2b8; color: white; }
+        
+        /* Fix full height background to avoid "lines" at bottom of content */
+        html, body { height: 100%; min-height: 100vh; }
+    </style>
+</head>
+<body class="bg-light">
+    
+    <nav class="navbar navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Admin Dashboard</a>
+        <div>
+            <span id="user-display" class="text-white mr-3"></span>
+            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='graph.html'">
+                <i class="fa fa-arrow-left"></i> Tornar al Graf
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        
+        <!-- Key Prompt -->
+        <div id="key-container" class="alert alert-warning" style="display:none;">
+            <h5>🔐 Desbloquejar Dades</h5>
+            <p>Per modificar el graf, introdueix la clau de xifrat actual:</p>
+            <div class="input-group">
+                <input type="password" id="enc-key" class="form-control" placeholder="Clau Fernet">
+                <div class="input-group-append">
+                    <button class="btn btn-warning" onclick="saveKey()">Desar Clau</button>
+                </div>
+            </div>
+        </div>
+
+        <h3>Suggeriments</h3>
+        
+        <!-- Filters -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link active" href="#" onclick="setFilter('pending', this)">Pendents</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="setFilter('accepted', this)">Acceptats</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="setFilter('rejected', this)">Rebutjats</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="setFilter('all', this)">Tots</a>
+            </li>
+        </ul>
+
+        <div id="loading" class="text-center py-5">
+            <i class="fa fa-spinner fa-spin fa-3x text-muted"></i>
+        </div>
+        
+        <div id="suggestions-list" class="row"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="js/auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="/fernet/fernetBrowser.js"></script>
+    <script src="https://unpkg.com/@octokit/rest/dist-web/index.js"></script> 
+
+    <script>
+        // Store key in session for this tab only
+        let ENCRYPTION_KEY = sessionStorage.getItem('enc_key');
+        const REPO_OWNER = 'grafdedades';
+        const REPO_NAME = 'grafdedades.github.io';
+        const BRANCH = 'testing'; // TARGET BRANCH
+        
+        // FILES
+        const UNCENSORED_PATH = 'data/graph_data.enc';
+        const CENSORED_PATH = 'data/encrypted_data.txt';
+        
+        let CURRENT_FILTER = 'pending';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Auth.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // --- SECURITY CHECK: VERIFY PUSH ACCESS ---
+            const ghToken = Auth.getToken();
+            try {
+                const permRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`, {
+                    headers: { 'Authorization': `token ${ghToken}` }
+                });
+                if (permRes.ok) {
+                    const repoMeta = await permRes.json();
+                    if (!repoMeta.permissions || !repoMeta.permissions.push) {
+                         alert("ACCÉS DENEGAT: No ets administrador.\n\nContacta amb els administradors per ser afegit com a col·laborador del repositori.");
+                         window.location.href = 'graph.html';
+                         return;
+                    }
+                } else {
+                     // If we can't check permissions (e.g. 401/404), might be safe to kick out or warn.
+                     // 404 on repo implies no read access?
+                     console.warn("Could not verify repo permissions:", permRes.status);
+                }
+            } catch (err) {
+                console.error("Error verifying permissions", err);
+            }
+            // ------------------------------------------
+
+            const user = Auth.getUser();
+            document.getElementById('user-display').innerText = user.login;
+            
+            if (!ENCRYPTION_KEY) {
+                document.getElementById('key-container').style.display = 'block';
+            }
+
+            loadSuggestions();
+        });
+
+        function saveKey() {
+            const k = document.getElementById('enc-key').value;
+            if (k) {
+                ENCRYPTION_KEY = k;
+                sessionStorage.setItem('enc_key', k);
+                document.getElementById('key-container').style.display = 'none';
+                alert('Clau guardada temporalment.');
+            }
+        }
+        
+        function setFilter(status, el) {
+            // Update UI
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            el.classList.add('active');
+            
+            CURRENT_FILTER = status;
+            loadSuggestions();
+        }
+
+        async function loadSuggestions() {
+            const container = document.getElementById('suggestions-list');
+            const loader = document.getElementById('loading');
+            
+            container.innerHTML = '';
+            loader.style.display = 'block';
+
+            try {
+                // Pass status filter param AND token for security check
+                const token = Auth.getToken();
+                const response = await fetch(CONFIG.scriptUrl + `?action=get_suggestions&status=${CURRENT_FILTER}&token=${token}`);
+                const data = await response.json();
+                
+                loader.style.display = 'none';
+
+                // Handle Backend Error
+                if (data.status === 'error') {
+                    alert("Error del servidor: " + data.message);
+                    if (data.message.includes('Access Denied')) {
+                         window.location.href = 'graph.html';
+                    }
+                    return;
+                }
+
+                if (data.suggestions && data.suggestions.length > 0) {
+                    data.suggestions.forEach(s => {
+                        const card = createBundleCard(s);
+                        container.appendChild(card);
+                    });
+                } else {
+                    container.innerHTML = '<div class="col-12 text-center text-muted">No hi ha elements en aquesta categoria.</div>';
+                }
+
+            } catch (e) {
+                console.error(e);
+                loader.style.display = 'none';
+                alert('Error carregant suggeriments: ' + e.message);
+            }
+        }
+
+        function createBundleCard(bundle) {
+            const col = document.createElement('div');
+            col.className = 'col-12';
+            
+            // Build items HTML
+            let itemsHtml = '';
+            if (Array.isArray(bundle.items)) {
+                itemsHtml = bundle.items.map((item, idx) => {
+                    const uniqueId = `item-${bundle.id}-${idx}`;
+                    const badgeClass = item.type === 'node' ? 'badge-node' : 'badge-edge';
+                    
+                    // Basic Header Info
+                    let headerInfo = '';
+                    if (item.type === 'node') {
+                        headerInfo = `<b>${item.payload.label}</b>`;
+                    } else {
+                        headerInfo = `<b>${item.payload.source} ↔ ${item.payload.target}</b>`;
+                    }
+
+                    // Detailed Attributes Table
+                    const attributes = Object.entries(item.payload).map(([k, v]) => {
+                         return `<tr><th style="width:120px">${k}</th><td>${v}</td></tr>`;
+                    }).join('');
+
+                    return `
+                        <div class="item-row">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <button class="btn btn-sm btn-light mr-2 border" type="button" data-toggle="collapse" data-target="#${uniqueId}">
+                                        <i class="fa fa-caret-down"></i>
+                                    </button>
+                                    <span class="badge ${badgeClass} mr-2">${item.type.toUpperCase()}</span>
+                                    <span>${headerInfo}</span>
+                                </div>
+                                <small class="text-muted d-none d-md-block">${item.description || ''}</small>
+                            </div>
+                            
+                            <div id="${uniqueId}" class="collapse mt-2">
+                                <div class="card card-body bg-white border small p-0">
+                                    <table class="table table-sm table-striped mb-0">
+                                        <tbody>${attributes}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                itemsHtml = `<div class="text-danger">Format invàlid: items no és un array</div>`;
+            }
+
+            // Status colors
+            let statusBadge = 'badge-warning';
+            if (bundle.status === 'accepted') statusBadge = 'badge-success';
+            if (bundle.status === 'rejected') statusBadge = 'badge-danger';
+            
+            // Buttons logic: Only show actions if Pending
+            let actionButtons = '';
+            if (bundle.status === 'pending') {
+                actionButtons = `
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-outline-danger mr-2" onclick="reject('${bundle.id}')">Rebutjar Tot</button>
+                        <button class="btn btn-success" onclick='acceptBundle(${JSON.stringify(bundle).replace(/'/g, "&#39;")})'>Acceptar & Integrar</button>
+                    </div>
+                `;
+            }
+            
+            // Processed Info
+            let processedInfo = '';
+            if (bundle.status !== 'pending' && bundle.processedBy) {
+                processedInfo = `<div class="mt-3 text-right small text-muted font-italic">
+                    Processat per <strong>${bundle.processedBy}</strong> el ${new Date(bundle.processedAt).toLocaleString()}
+                </div>`;
+            }
+
+            col.innerHTML = `
+                <div class="card bundle-card shadow-sm" style="border-top-color: ${bundle.status==='accepted'?'#28a745':(bundle.status==='rejected'?'#dc3545':'#6f42c1')}">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#bundle-body-${bundle.id}" style="cursor:pointer">
+                        <div>
+                            <h5 class="mb-0 text-dark"><i class="fa fa-box-open text-muted"></i> Bundle</h5>
+                            <small class="text-muted">
+                                <i class="fa fa-user"></i> ${bundle.user} |
+                                <i class="fa fa-clock"></i> ${new Date(bundle.timestamp).toLocaleString()} |
+                                <strong>Nom:</strong> ${bundle.realName || 'N/A'}
+                            </small>
+                        </div>
+                        <div>
+                             <span class="badge ${statusBadge} mr-2">${bundle.status.toUpperCase()}</span>
+                             <i class="fa fa-chevron-down text-muted"></i>
+                        </div>
+                    </div>
+                    
+                    <div id="bundle-body-${bundle.id}" class="collapse ${bundle.status === 'pending' ? 'show' : ''}">
+                        <div class="card-body">
+                            ${bundle.comment ? `<div class="alert alert-secondary mb-3"><i class="fa fa-comment"></i> ${bundle.comment}</div>` : ''}
+                            <h6 class="border-bottom pb-2">Contingut (${bundle.items ? bundle.items.length : 0} elements):</h6>
+                            <div class="mb-4 pl-2">
+                                ${itemsHtml}
+                            </div>
+                            
+                            ${actionButtons}
+                            ${processedInfo}
+                        </div>
+                    </div>
+                </div>
+            `;
+            return col;
+        }
+
+        async function reject(id) {
+            if (!confirm('Segur que vols rebutjar tot el paquet?')) return;
+            await updateStatus(id, 'rejected');
+            loadSuggestions();
+        }
+
+        async function updateStatus(id, status) {
+            // Include who processed it
+            const user = Auth.getUser();
+            
+            await fetch(CONFIG.scriptUrl + '?action=update_status', {
+                method: 'POST',
+                body: JSON.stringify({
+                    id: id, 
+                    status: status,
+                    processedBy: user.login // Current Admin
+                })
+            });
+        }
+        
+        // --- CRYPTO HELPERS ---
+        
+        async function deriveKeyPBKDF2(password) {
+            const enc = new TextEncoder();
+            const keyMaterial = await window.crypto.subtle.importKey(
+                "raw", 
+                enc.encode(password), 
+                {name: "PBKDF2"}, 
+                false, 
+                ["deriveBits"]
+            );
+            const salt = enc.encode("grafdedades_salt_v2"); /// MATCHES PYTHON DEFAULT_SALT
+            const derivedBits = await window.crypto.subtle.deriveBits(
+                {
+                    "name": "PBKDF2",
+                    salt: salt,
+                    "iterations": 100000,
+                    "hash": "SHA-256"
+                },
+                keyMaterial,
+                256 // 32 bytes
+            );
+            
+            // Output as URL-Safe Base64
+            let binary = '';
+            const bytes = new Uint8Array(derivedBits);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            const base64 = window.btoa(binary);
+            return base64.replace(/\+/g, '-').replace(/\//g, '_'); // Python keeps padding usually
+        }
+
+        function deriveKeyLegacy(password) {
+             // Heuristic: It's a password, apply padding logic
+             if (password.length < 32 || !password.includes('=')) {
+                 return password.repeat(50).substring(0,43) + "=";
+             }
+             return password; 
+        }
+
+        function applyAnonymization(data) {
+            // data is { nodes:[], edges:[], unwanted:[] }
+            const unwanted = data.unwanted || [];
+            const mapping = {};
+            unwanted.forEach((name, idx) => {
+                mapping[name] = `Anònim ${idx}`;
+            });
+            
+            // Deep copy to avoid mutating original
+            const newData = JSON.parse(JSON.stringify(data));
+            
+            // 1. Anonymize Labels
+            newData.nodes.forEach(n => {
+                if (mapping[n.label]) n.label = mapping[n.label];
+                // Convert bools to legacy strings for frontend
+                n.cfis = String(n.cfis).toUpperCase();
+            });
+            
+            // 2. Anonymize Edges
+            newData.edges.forEach(e => {
+                if (mapping[e.source]) e.source = mapping[e.source];
+                if (mapping[e.target]) e.target = mapping[e.target];
+                
+                // Convert bools to legacy strings
+                e.repeated = String(e.repeated).toUpperCase();
+                e.relationship = String(e.relationship).toUpperCase();
+            });
+            
+            return {
+                nodes: newData.nodes,
+                edges: newData.edges
+            };
+        }
+
+        async function acceptBundle(bundle) {
+            if (!ENCRYPTION_KEY) {
+                alert('Necessites la contrassenya de xifrat!');
+                document.getElementById('key-container').style.display = 'block';
+                return;
+            }
+            
+            if (!confirm(`S'afegiran ${bundle.items.length} elements al graf. Procedir?`)) return;
+
+            const btn = event.target || event.currentTarget;
+            const originalText = btn.innerText;
+            btn.innerText = 'Processant...';
+            btn.disabled = true;
+            
+            try {
+                const ghToken = Auth.getToken();
+                if (!ghToken) throw new Error("No GitHub Token found. Please relogin.");
+
+                // Derive Keys
+                const password = ENCRYPTION_KEY;
+                const keyUncensored = await deriveKeyPBKDF2(password);
+                const keyCensored = deriveKeyLegacy(password);
+                
+                console.log("Keys Derived.");
+
+                // --- STEP 1: Fetch Uncensored Data ---
+                btn.innerText = 'Baixant Dades (1/4)...';
+                const fileRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${UNCENSORED_PATH}?ref=${BRANCH}`, {
+                     headers: { 'Authorization': `token ${ghToken}` }
+                });
+                
+                // CHECK SCOPES
+                const scopes = fileRes.headers.get('x-oauth-scopes');
+                console.log('Token Scopes:', scopes);
+                if (scopes && !scopes.includes('repo')) {
+                    alert(`ALERTA DE SEGURETAT: El teu usuari no té permisos d'escriptura al repositori.\nScopes actuals: ${scopes}\n\nSiusplau, fes LOGOUT i torna a fer LOGIN per actualitzar els permisos.`);
+                    throw new Error("Missing 'repo' scope in GitHub Token.");
+                }
+
+                if (!fileRes.ok) throw new Error(`No s'ha pogut baixar el fitxer UNCENSORED de la branca ${BRANCH} (graph_data.enc)`);
+                
+                const fileData = await fileRes.json();
+                const contentEncoded = fileData.content.replace(/\n/g, "");
+                const encryptedContent = atob(contentEncoded);
+                
+                // --- STEP 2: Decrypt (New Method) ---
+                btn.innerText = 'Desencriptant (2/4)...';
+                var secret = new fernet.Secret(keyUncensored);
+                var tokenObj = new fernet.Token({
+                      secret: secret,
+                      token: encryptedContent,
+                      ttl: 0
+                });
+                var jsonStr = tokenObj.decode(); 
+                var graphData = JSON.parse(jsonStr);
+                
+                console.log(`Graph decrypted. Nodes: ${graphData.nodes.length}`);
+
+                // --- STEP 3: Merge ---
+                let changesCount = 0;
+                bundle.items.forEach(item => {
+                    const p = item.payload;
+                    if (item.type === 'node') {
+                        if (!graphData.nodes.find(n => n.label === p.label)) {
+                            graphData.nodes.push({
+                                label: p.label,
+                                year: parseInt(p.year),
+                                gender: p.gender,
+                                cfis: p.cfis === 'true' || p.cfis === true
+                            });
+                            changesCount++;
+                        }
+                    } else if (item.type === 'edge') {
+                        graphData.edges.push({
+                            source: p.source,
+                            target: p.target,
+                            weight: parseInt(p.weight),
+                            year: parseInt(p.year),
+                            month: p.month || '',
+                            place: p.place || '',
+                            repeated: p.repeated === 'true' || p.repeated === true,
+                            relationship: p.relationship === 'true' || p.relationship === true,
+                            comments: p.comments
+                        });
+                        changesCount++;
+                    }
+                });
+
+                if (changesCount === 0) {
+                    alert("No s'han aplicat canvis (ja existien?).");
+                }
+                
+                // Re-Assign IDs
+                graphData.nodes.forEach((n, i) => n.id = i);
+                graphData.edges.forEach((e, i) => e.id = i);
+
+                // --- STEP 4: Encrypt & Commit Uncensored (New Key) ---
+                btn.innerText = 'Guardant Uncensored (3/4)...';
+                
+                var nToken = new fernet.Token({ secret: secret, ttl: 0 }); // Secret constructed with keyUncensored
+                var newEncrytedUncensored = nToken.encode(JSON.stringify(graphData));
+                
+                const putUncensoredRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${UNCENSORED_PATH}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Authorization': `token ${ghToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Update Full Graph (Admin): ${bundle.id}`,
+                        content: btoa(newEncrytedUncensored),
+                        sha: fileData.sha, // Update existing file
+                        branch: BRANCH
+                    })
+                });
+                
+                if (!putUncensoredRes.ok) {
+                    let msg = `Error guardant Uncensored (${putUncensoredRes.status}): ${putUncensoredRes.statusText}`;
+                    if (putUncensoredRes.status === 404) {
+                         msg += "\n\nPossibles causes:\n1. La branca 'testing' no existeix a GitHub (fes 'git push origin testing').\n2. No tens permisos d'escriptura (Fes Logout i torna a entrar).";
+                    }
+                    throw new Error(msg);
+                }
+                
+                // --- STEP 5: Anonymize & Commit Censored (Legacy Key / Frontend) ---
+                btn.innerText = 'Guardant Censured (4/4)...';
+                
+                const frontendData = applyAnonymization(graphData);
+                
+                // Get SHA of current censored file
+                const censoredRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CENSORED_PATH}?ref=${BRANCH}`, {
+                     headers: { 'Authorization': `token ${ghToken}` }
+                });
+                let censoredSha = null;
+                if (censoredRes.ok) {
+                    const cData = await censoredRes.json();
+                    censoredSha = cData.sha;
+                }
+                
+                // Encrypt with LEGACY Key
+                var secretLegacy = new fernet.Secret(keyCensored);
+                var tokenLegacy = new fernet.Token({ secret: secretLegacy, ttl: 0 });
+                var newEncryptedCensored = tokenLegacy.encode(JSON.stringify(frontendData));
+                
+                const putCensoredRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CENSORED_PATH}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Authorization': `token ${ghToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Update Frontend Graph (Admin): ${bundle.id}`,
+                        content: btoa(newEncryptedCensored),
+                        sha: censoredSha,
+                        branch: BRANCH
+                    })
+                });
+                
+                if (!putCensoredRes.ok) {
+                    throw new Error(`Error guardant Censored (${putCensoredRes.status}): ${putCensoredRes.statusText}`);
+                }
+
+                // --- STEP 6: Update Status ---
+                btn.innerText = 'Finalitzant...';
+                await updateStatus(bundle.id, 'accepted');
+                
+                alert(`Èxit! ${changesCount} canvis integrats. S'han actualitzat els dos fitxers.`);
+                loadSuggestions();
+
+            } catch (err) {
+                console.error(err);
+                alert('FATAL: ' + err.message);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
