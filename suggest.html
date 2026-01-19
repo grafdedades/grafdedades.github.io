@@ -86,13 +86,18 @@
                         <div id="fields-node">
                             <div class="form-group">
                                 <label>Nom complet <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-lg" id="node-name" placeholder="Ex: Maria García">
+                                <input type="text" class="form-control form-control-lg autocomplete" id="node-name" placeholder="Ex: Maria García">
+                                <div id="node-exists-warning" class="invalid-feedback" style="font-weight:bold; font-size: 0.9rem;">
+                                    <i class="fa fa-exclamation-triangle"></i> Atenció: Aquest nom ja existeix al graf.
+                                </div>
                                 <small class="form-text text-muted">Asegura't que no existeix ja usant el cercador del graf.</small>
                             </div>
                             <div class="form-row">
                                 <div class="col-md-6 mb-3">
-                                    <label>Any (Promoció)</label>
-                                    <input type="number" class="form-control" id="node-year" placeholder="2024" min="2000" max="2030">
+                                    <label>Any (Promoció / Generació) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="node-year" placeholder="Ex: 2026" min="2017" max="2035">
+                                    <small id="year-hint" class="form-text text-primary font-italic"></small>
+                                    <div class="invalid-feedback">L'any ha de ser entre 2017 i 2035.</div>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label>Gènere</label>
@@ -132,8 +137,33 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label>Any</label>
-                                    <input type="number" class="form-control" id="link-year" placeholder="2024">
+                                    <label>Any <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="link-year" placeholder="2024" min="2017" max="2035">
+                                    <div class="invalid-feedback">L'any ha de ser entre 2017 i 2035.</div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Mes (Opcional)</label>
+                                    <select class="form-control" id="link-month">
+                                        <option value="">- Selecciona -</option>
+                                        <option value="1">Gener</option>
+                                        <option value="2">Febrer</option>
+                                        <option value="3">Març</option>
+                                        <option value="4">Abril</option>
+                                        <option value="5">Maig</option>
+                                        <option value="6">Juny</option>
+                                        <option value="7">Juliol</option>
+                                        <option value="8">Agost</option>
+                                        <option value="9">Setembre</option>
+                                        <option value="10">Octubre</option>
+                                        <option value="11">Novembre</option>
+                                        <option value="12">Desembre</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Lloc (Opcional)</label>
+                                    <input type="text" class="form-control" id="link-place" placeholder="Ex: Razzmatazz">
                                 </div>
                             </div>
                             <div class="form-group">
@@ -192,7 +222,7 @@
                         </div>
                         <div class="form-group">
                             <label>Comentaris Generals</label>
-                            <textarea class="form-control" id="meta-comments" rows="3" placeholder="Algun detall extra sobre aquest paquet de canvis?"></textarea>
+                            <textarea class="form-control" id="meta-comments" rows="3" placeholder="Comentaris adicionals per facilitar el proces de verificació de la solicitud (opcional) ej: curs,...."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
@@ -334,9 +364,65 @@
                     var token = new fernet.Token({secret: secret, token: text, ttl: 0});
                     const graph = JSON.parse(token.decode());
                     GRAPH_NODES = graph.nodes.map(n => n.label);
+                    GRAPH_EDGES = graph.edges.map(e => ({source: e.source, target: e.target}));
                 } catch (e) { console.warn("Autocomplete load failed", e); }
             }
             setupAutocomplete();
+
+            // --- VALIDATION: CHECK IF NODE EXISTS ---
+            const nodeInput = document.getElementById('node-name');
+            nodeInput.addEventListener('input', function() {
+                 const val = this.value.trim();
+                 const warning = document.getElementById('node-exists-warning');
+                 
+                 // Check case-insensitive match
+                 const exists = GRAPH_NODES.some(n => n.toLowerCase() === val.toLowerCase());
+                 
+                 if (exists) {
+                     this.classList.add('is-invalid');
+                     warning.style.display = 'block';
+                 } else {
+                     this.classList.remove('is-invalid');
+                     warning.style.display = 'none';
+                 }
+            });
+
+            // --- YEAER HINT LISTENER ---
+            const yearInput = document.getElementById('node-year');
+            const yearHint = document.getElementById('year-hint');
+            
+            function updateYearHint() {
+                const y = parseInt(yearInput.value);
+                if (y && y > 1900) {
+                    yearHint.innerText = `💡 Classe dels nascuts el ${y - 18}`;
+                } else {
+                    yearHint.innerText = '';
+                }
+            }
+            yearInput.addEventListener('input', updateYearHint);
+            // Init with default/current value if any
+            updateYearHint();
+
+            // --- SET DYNAMIC MAX YEAR & DEFAULTS ---
+            const NOW = new Date();
+            const DY_MAX_YEAR = NOW.getFullYear() + 1;
+            const CURRENT_YEAR = NOW.getFullYear();
+            const CURRENT_MONTH = NOW.getMonth() + 1; // 0-11 -> 1-12
+
+            ['node-year', 'link-year'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.setAttribute('max', DY_MAX_YEAR);
+                    el.value = CURRENT_YEAR; // Default to Current Year
+                    // Update validation msg sibling
+                    const feedback = el.parentNode.querySelector('.invalid-feedback');
+                    if (feedback) feedback.innerText = `L'any ha de ser entre 2017 i ${DY_MAX_YEAR}.`;
+                }
+            });
+            
+            // Default Month
+            const monthEl = document.getElementById('link-month');
+            if (monthEl) monthEl.value = CURRENT_MONTH;
         });
 
         // --- FORM ---
@@ -345,16 +431,36 @@
             const mode = document.getElementById('current-mode').value;
             let item = null;
             
+            const MAX_YEAR = new Date().getFullYear() + 1;
+            
+            // Helper for validation
+            function checkYear(val, elId) {
+                if (!val || val < 2017 || val > MAX_YEAR) {
+                    document.getElementById(elId).classList.add('is-invalid');
+                    return false;
+                }
+                document.getElementById(elId).classList.remove('is-invalid');
+                return true;
+            }
+
             if (mode === 'node') {
                 const name = document.getElementById('node-name').value.trim();
+                const yearVal = parseInt(document.getElementById('node-year').value);
+                
                 if (!name) return alert('El nom és obligatori');
+                
+                // Year Validation
+                if (!checkYear(yearVal, 'node-year')) {
+                     return alert(`L'any ha de ser vàlid (2017 - ${MAX_YEAR})`);
+                }
+
                 item = {
                     type: 'node',
                     description: name,
                     details: 'Nou Node',
                     payload: {
                         label: name,
-                        year: parseInt(document.getElementById('node-year').value) || new Date().getFullYear(),
+                        year: yearVal,
                         gender: document.getElementById('node-gender').value,
                         cfis: document.getElementById('node-cfis').checked
                     }
@@ -362,7 +468,55 @@
             } else {
                 const source = document.getElementById('link-source').value.trim();
                 const target = document.getElementById('link-target').value.trim();
+                const yearVal = parseInt(document.getElementById('link-year').value);
+
                 if (!source || !target) return alert('Els noms són obligatoris');
+                
+                // VALIDATION 1: Self-loop
+                if (source.toLowerCase() === target.toLowerCase()) {
+                    return alert("No pots connectar una persona amb ella mateixa.");
+                }
+
+                // VALIDATION 2: Check if nodes exist (in Graph OR in Cart)
+                const newNodesInCart = CART.filter(i => i.type === 'node').map(i => i.payload.label.toLowerCase());
+                const graphNodesLower = GRAPH_NODES.map(n => n.toLowerCase());
+                
+                const sourceExists = graphNodesLower.includes(source.toLowerCase()) || newNodesInCart.includes(source.toLowerCase());
+                const targetExists = graphNodesLower.includes(target.toLowerCase()) || newNodesInCart.includes(target.toLowerCase());
+                
+                if (!sourceExists) {
+                    return alert(`La persona "${source}" no existeix. Afegeix-la primer com a "Persona" (Nou Node).`);
+                }
+                if (!targetExists) {
+                    return alert(`La persona "${target}" no existeix. Afegeix-la primer com a "Persona" (Nou Node).`);
+                }
+
+                // VALIDATION 3: Check if edge exists (in Graph OR in Cart) - Undirected check
+                const sL = source.toLowerCase();
+                const tL = target.toLowerCase();
+                
+                const edgeExistsInGraph = GRAPH_EDGES.some(e => {
+                    const es = e.source.toLowerCase();
+                    const et = e.target.toLowerCase();
+                    return (es === sL && et === tL) || (es === tL && et === sL);
+                });
+                
+                const edgeExistsInCart = CART.some(item => {
+                    if (item.type !== 'edge') return false;
+                    const es = item.payload.source.toLowerCase();
+                    const et = item.payload.target.toLowerCase();
+                    return (es === sL && et === tL) || (es === tL && et === sL);
+                });
+
+                if (edgeExistsInGraph || edgeExistsInCart) {
+                    return alert(`Aquesta connexió (${source} ↔ ${target}) ja existeix actualment (o ja l'has afegit).`);
+                }
+
+                 // Year Validation
+                if (!checkYear(yearVal, 'link-year')) {
+                    return alert(`L'any ha de ser vàlid (2017 - ${MAX_YEAR})`);
+                }
+
                 item = {
                     type: 'edge',
                     description: `${source} ↔ ${target}`,
@@ -370,7 +524,9 @@
                     payload: {
                         source: source,
                         target: target,
-                        year: parseInt(document.getElementById('link-year').value) || new Date().getFullYear(),
+                        year: yearVal,
+                        month: document.getElementById('link-month').value,
+                        place: document.getElementById('link-place').value.trim(),
                         weight: parseInt(document.getElementById('link-weight').value),
                         comments: document.getElementById('link-comments').value
                     }
@@ -380,6 +536,20 @@
             CART.push(item);
             renderCart();
             e.target.reset();
+            
+            // RESTORE DEFAULTS
+            const NOW = new Date();
+            const CURRENT_YEAR = NOW.getFullYear();
+            const CURRENT_MONTH = NOW.getMonth() + 1;
+            
+            if (document.getElementById('node-year')) document.getElementById('node-year').value = CURRENT_YEAR;
+            if (document.getElementById('link-year')) document.getElementById('link-year').value = CURRENT_YEAR;
+            if (document.getElementById('link-month')) document.getElementById('link-month').value = CURRENT_MONTH;
+            
+            // Clear hints
+            if (typeof updateYearHint === 'function') updateYearHint();
+            // Restore hidden mode input
+            document.getElementById('current-mode').value = mode; 
         });
 
         function renderCart() {
@@ -416,27 +586,34 @@
         }
 
         function setupAutocomplete() {
-            if (GRAPH_NODES.length === 0) return;
+            // Helper to get all nodes (Graph + Cart)
+            function getAvailableNodes() {
+                const newNodes = CART.filter(i => i.type === 'node').map(i => i.payload.label);
+                // Remove duplicates if any (though duplicates are prevented by validation)
+                return [...new Set([...GRAPH_NODES, ...newNodes])];
+            }
+
             const inputs = document.querySelectorAll('.autocomplete');
             inputs.forEach(inp => {
                 inp.addEventListener('input', function(e) {
                     const val = this.value;
-                    closeAll(this);
+                    closeAll();
                     if (!val) return;
                     
                     const list = document.createElement("DIV");
                     list.className = "autocomplete-suggestions shadow-sm";
                     this.parentNode.appendChild(list);
                     
+                    const allNodes = getAvailableNodes();
                     let matches = 0;
-                    for (let i = 0; i < GRAPH_NODES.length; i++) {
+                    for (let i = 0; i < allNodes.length; i++) {
                         if (matches > 8) break;
-                        if (GRAPH_NODES[i].toUpperCase().includes(val.toUpperCase())) {
+                        if (allNodes[i].toUpperCase().includes(val.toUpperCase())) {
                             const item = document.createElement("DIV");
                             item.className = "autocomplete-suggestion";
-                            item.innerHTML = GRAPH_NODES[i].replace(new RegExp(val, "gi"), "<strong>$&</strong>");
+                            item.innerHTML = allNodes[i].replace(new RegExp(val, "gi"), "<strong>$&</strong>");
                             item.addEventListener("click", () => {
-                                inp.value = GRAPH_NODES[i];
+                                inp.value = allNodes[i];
                                 closeAll();
                             });
                             list.appendChild(item);

@@ -233,11 +233,16 @@
                               if (data.permissions && data.permissions.push) {
                                   window.location.href = 'admin.html';
                               } else {
-                                  alert("ACCÉS DENEGAT: No ets administrador.\n\nContacta amb els administradors per ser afegit com a col·laborador del repositori.");
+                                  // Access Denied BUT maybe they are admin with wrong scope?
+                                  if (confirm("ACCÉS DENEGAT: No tens permisos d'escriptura.\n\nSi ets administrador, potser necessites tornar a iniciar sessió amb permisos d'edició (repo scope).\n\nVols re-iniciar sessió com a Administrador?")) {
+                                      Auth.login(true);
+                                  }
                               }
                           } else {
-                              // If fetch fails (maybe 401/404), try basic login or alert
-                              alert("Error verificant permisos. Assegura't de tenir connexió.");
+                              // Fetch failed (maybe 404 or 401 due to scope)
+                              if (confirm("No s'han pogut verificar els permisos (Error " + response.status + ").\n\nSi ets administrador, vols intentar re-iniciar sessió amb permisos complets?")) {
+                                   Auth.login(true);
+                              }
                           }
                       } catch (e) {
                           document.body.style.cursor = 'default';
