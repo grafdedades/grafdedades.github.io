@@ -418,7 +418,8 @@
 
                 // --- STEP 1: Fetch Uncensored Data ---
                 btn.innerText = 'Baixant Dades (1/4)...';
-                const fileRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${UNCENSORED_PATH}?ref=${BRANCH}`, {
+                // Cache-busting with timestamp to ensure latest version
+                const fileRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${UNCENSORED_PATH}?ref=${BRANCH}&t=${Date.now()}`, {
                      headers: { 'Authorization': `token ${ghToken}` }
                 });
                 
@@ -450,7 +451,9 @@
                 console.log(`Graph decrypted. Nodes: ${graphData.nodes.length}`);
 
                 // --- STEP 3: Merge ---
-                let changesCount = 0;
+                let nodesAdded = 0;
+                let edgesAdded = 0;
+                
                 bundle.items.forEach(item => {
                     const p = item.payload;
                     if (item.type === 'node') {
@@ -461,9 +464,11 @@
                                 gender: p.gender,
                                 cfis: p.cfis === 'true' || p.cfis === true
                             });
-                            changesCount++;
+                            nodesAdded++;
                         }
                     } else if (item.type === 'edge') {
+                        // Check duplicates before push? (Already filtered by frontend ideally, but good to be safe)
+                        // For now we assume frontend validity or just push.
                         graphData.edges.push({
                             source: p.source,
                             target: p.target,
@@ -475,11 +480,11 @@
                             relationship: p.relationship === 'true' || p.relationship === true,
                             comments: p.comments
                         });
-                        changesCount++;
+                        edgesAdded++;
                     }
                 });
 
-                if (changesCount === 0) {
+                if (nodesAdded === 0 && edgesAdded === 0) {
                     alert("No s'han aplicat canvis (ja existien?).");
                 }
                 
@@ -493,6 +498,8 @@
                 var nToken = new fernet.Token({ secret: secret, ttl: 0 }); // Secret constructed with keyUncensored
                 var newEncrytedUncensored = nToken.encode(JSON.stringify(graphData));
                 
+                const commitMsg = `Update Graph [Nodes: +${nodesAdded}, Edges: +${edgesAdded}] Transaction: ${bundle.id}`;
+
                 const putUncensoredRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${UNCENSORED_PATH}`, {
                     method: 'PUT',
                     headers: { 
@@ -500,7 +507,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        message: `Update Full Graph (Admin): ${bundle.id}`,
+                        message: commitMsg,
                         content: btoa(newEncrytedUncensored),
                         sha: fileData.sha, // Update existing file
                         branch: BRANCH
@@ -508,9 +515,12 @@
                 });
                 
                 if (!putUncensoredRes.ok) {
+                    if (putUncensoredRes.status === 409) {
+                        throw new Error("CONFLICTE DETECTAT: Algú ha modificat el graf mentre estaves revisant. Siusplau, recarrega la pàgina i torna-ho a intentar.");
+                    }
                     let msg = `Error guardant Uncensored (${putUncensoredRes.status}): ${putUncensoredRes.statusText}`;
                     if (putUncensoredRes.status === 404) {
-                         msg += "\n\nPossibles causes:\n1. La branca 'testing' no existeix a GitHub (fes 'git push origin testing').\n2. No tens permisos d'escriptura (Fes Logout i torna a entrar).";
+                         msg += "\n\nPossibles causes:\n1. La branca 'testing' no existeix.\n2. No tens permisos d'escriptura.";
                     }
                     throw new Error(msg);
                 }
@@ -520,8 +530,8 @@
                 
                 const frontendData = applyAnonymization(graphData);
                 
-                // Get SHA of current censored file
-                const censoredRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CENSORED_PATH}?ref=${BRANCH}`, {
+                // Get SHA of current censored file (with cache busting)
+                const censoredRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CENSORED_PATH}?ref=${BRANCH}&t=${Date.now()}`, {
                      headers: { 'Authorization': `token ${ghToken}` }
                 });
                 let censoredSha = null;
@@ -542,7 +552,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        message: `Update Frontend Graph (Admin): ${bundle.id}`,
+                        message: commitMsg,
                         content: btoa(newEncryptedCensored),
                         sha: censoredSha,
                         branch: BRANCH
@@ -550,6 +560,9 @@
                 });
                 
                 if (!putCensoredRes.ok) {
+                    if (putCensoredRes.status === 409) {
+                        throw new Error("CONFLICTE (Censored): El fitxer públic ha canviat. Reintenta-ho.");
+                    }
                     throw new Error(`Error guardant Censored (${putCensoredRes.status}): ${putCensoredRes.statusText}`);
                 }
 
@@ -557,7 +570,7 @@
                 btn.innerText = 'Finalitzant...';
                 await updateStatus(bundle.id, 'accepted');
                 
-                alert(`Èxit! ${changesCount} canvis integrats. S'han actualitzat els dos fitxers.`);
+                alert(`Èxit! ${nodesAdded} nodes i ${edgesAdded} connexions afegides.\nS'han actualitzat els dos fitxers correctament.`);
                 loadSuggestions();
 
             } catch (err) {
