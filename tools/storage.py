@@ -16,7 +16,6 @@ from .crypto import encrypt, decrypt
 
 # Default paths
 DATA_DIR = Path(__file__).parent.parent / "data"
-BACKUP_DIR = DATA_DIR / "backups"
 
 # File names
 GRAPH_DATA_FILE = "graph_data.enc"           # New single source of truth
@@ -29,31 +28,11 @@ LEGACY_UNWANTED_FILE = "encrypted_unwanted.txt"
 
 
 def ensure_dirs() -> None:
-    """Ensure data and backup directories exist."""
+    """Ensure data directory exists."""
     DATA_DIR.mkdir(exist_ok=True)
-    BACKUP_DIR.mkdir(exist_ok=True)
 
 
-def create_backup(filename: str) -> Optional[Path]:
-    """
-    Create a timestamped backup of a file.
-    
-    Args:
-        filename: Name of file in DATA_DIR to backup
-    
-    Returns:
-        Path to backup file, or None if source doesn't exist
-    """
-    ensure_dirs()
-    source = DATA_DIR / filename
-    if not source.exists():
-        return None
-    
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_name = f"{source.stem}_{timestamp}{source.suffix}"
-    backup_path = BACKUP_DIR / backup_name
-    shutil.copy2(source, backup_path)
-    return backup_path
+
 
 
 def load_graph_data(password: str, use_legacy: bool = False) -> GraphData:
@@ -116,20 +95,15 @@ def _load_legacy(password: str) -> GraphData:
     return GraphData(nodes=nodes, edges=edges, unwanted=unwanted)
 
 
-def save_graph_data(data: GraphData, password: str, backup: bool = True) -> None:
+def save_graph_data(data: GraphData, password: str) -> None:
     """
     Encrypt and save graph data.
     
     Args:
         data: GraphData to save
         password: Encryption password
-        backup: If True, create backup before overwriting
     """
     ensure_dirs()
-    
-    if backup:
-        create_backup(GRAPH_DATA_FILE)
-        create_backup(FRONTEND_DATA_FILE)
     
     # Assign IDs
     data.assign_ids()
@@ -166,12 +140,7 @@ def migrate_from_legacy(password: str) -> GraphData:
     # Load from legacy files
     data = _load_legacy(password)
     
-    # Create backups of legacy files
-    create_backup(LEGACY_NODES_FILE)
-    create_backup(LEGACY_EDGES_FILE)
-    create_backup(LEGACY_UNWANTED_FILE)
-    
     # Save in new format
-    save_graph_data(data, password, backup=False)
+    save_graph_data(data, password)
     
     return data

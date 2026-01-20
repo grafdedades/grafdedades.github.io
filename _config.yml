@@ -2,12 +2,13 @@
 # Exclude files from being served by GitHub Pages
 
 exclude:
-  - data/backups/            # Backups
-  - Admin-Notebook.ipynb     # Admin tool
-  - Graph-updater.ipynb      # Graph updater
+  - data/graph_data.enc      # Graph non anonymized data
+  - notebooks/               # Local notebooks
+  - docs/                    # Local docs
   - .env                     # Local config
   - .env.example
   - requirements.txt
   - tools/                   # Python tools not needed by frontend
   - .gitignore
-  - README.md                # (Optional, but usually served)
+  - README.md     
+  - backend/                 # Backend not needed by frontend           

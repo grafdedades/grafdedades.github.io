@@ -96,7 +96,6 @@ def on_save_click(_):
                 
             save_graph_data(graph_data, _current_password)
             print(f"✅ Desat! {len(graph_data.nodes)} nodes i {len(graph_data.edges)} arestes encriptades")
-            print("📁 Backup creat a data/backups/")
             
         except Exception as e:
             print(f"❌ Error: {e}")

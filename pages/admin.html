@@ -258,7 +258,7 @@
             let processedInfo = '';
             if (bundle.status !== 'pending' && bundle.processedBy) {
                 processedInfo = `<div class="mt-3 text-right small text-muted font-italic">
-                    Processat per <strong>${bundle.processedBy}</strong> el ${new Date(bundle.processedAt).toLocaleString()}
+                    Processat per <strong><a href="https://github.com/${bundle.processedBy}" target="_blank" class="text-muted">${bundle.processedBy}</a></strong> el ${new Date(bundle.processedAt).toLocaleString()}
                 </div>`;
             }
 
@@ -268,7 +268,7 @@
                         <div>
                             <h5 class="mb-0 text-dark"><i class="fa fa-box-open text-muted"></i> Bundle</h5>
                             <small class="text-muted">
-                                <i class="fa fa-user"></i> ${bundle.user} |
+                                <i class="fa fa-user"></i> <a href="https://github.com/${bundle.user}" target="_blank" class="text-muted">${bundle.user}</a> |
                                 <i class="fa fa-clock"></i> ${new Date(bundle.timestamp).toLocaleString()} |
                                 <strong>Nom:</strong> ${bundle.realName || 'N/A'}
                             </small>
