@@ -19,6 +19,7 @@
         .cart-item { border-left: 5px solid #ccc; background: #fff; padding: 15px; margin-bottom: 10px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .cart-item.type-node { border-left-color: #28a745; }
         .cart-item.type-edge { border-left-color: #17a2b8; }
+        .cart-item.type-other { border-left-color: #ffc107; }
         .cart-remove { position: absolute; top: 10px; right: 15px; color: #dc3545; cursor: pointer; font-size: 1.2rem; }
         .cart-remove:hover { color: #bd2130; }
 
@@ -89,6 +90,10 @@
                         <div class="card py-4 m-2 type-select text-center w-50 shadow-sm" onclick="setMode('edge')" id="mode-edge">
                             <i class="fa fa-link fa-2x mb-2 text-info"></i>
                             <h5 class="mb-0">Connexió</h5>
+                        </div>
+                        <div class="card py-4 m-2 type-select text-center w-50 shadow-sm" onclick="setMode('other')" id="mode-other">
+                            <i class="fa fa-comment-dots fa-2x mb-2 text-warning"></i>
+                            <h5 class="mb-0">Altre</h5>
                         </div>
                     </div>
 
@@ -182,6 +187,17 @@
                                     <div class="form-group mb-0">
                                         <label>Comentaris</label>
                                         <input type="text" class="form-control" id="link-comments" placeholder="Opcional">
+                                    </div>
+                                </div>
+
+                                <!-- OTHER FIELDS -->
+                                <div id="fields-other" style="display:none;">
+                                    <div class="alert alert-warning">
+                                        <i class="fa fa-info-circle"></i> Utilitza aquesta opció per sol·licitar canvis que no es poden fer amb els formularis anteriors (ex: eliminar nodes, corregir errors, fusionar duplicats...).
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Descripció del canvi <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="other-desc" rows="4" placeholder="Explica detalladament què cal fer i per què..."></textarea>
                                     </div>
                                 </div>
 
@@ -355,9 +371,15 @@
             if (mode === 'node') {
                 document.getElementById('fields-node').style.display = 'block';
                 document.getElementById('fields-edge').style.display = 'none';
-            } else {
+                document.getElementById('fields-other').style.display = 'none';
+            } else if (mode === 'edge') {
                 document.getElementById('fields-node').style.display = 'none';
                 document.getElementById('fields-edge').style.display = 'block';
+                document.getElementById('fields-other').style.display = 'none';
+            } else {
+                document.getElementById('fields-node').style.display = 'none';
+                document.getElementById('fields-edge').style.display = 'none';
+                document.getElementById('fields-other').style.display = 'block';
             }
         };
 
@@ -482,7 +504,7 @@
                         cfis: document.getElementById('node-cfis').checked
                     }
                 };
-            } else {
+            } else if (mode === 'edge') {
                 const source = document.getElementById('link-source').value.trim();
                 const target = document.getElementById('link-target').value.trim();
                 const yearVal = parseInt(document.getElementById('link-year').value);
@@ -548,6 +570,18 @@
                         comments: document.getElementById('link-comments').value
                     }
                 };
+            } else if (mode === 'other') {
+                const desc = document.getElementById('other-desc').value.trim();
+                if (!desc) return alert("Has d'escriure una descripció.");
+                
+                item = {
+                    type: 'other',
+                    description: 'Sol·licitud Manual',
+                    details: 'Altre',
+                    payload: {
+                        description: desc
+                    }
+                };
             }
 
             CART.push(item);
@@ -593,7 +627,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="mb-1">${item.description}</h5>
-                            <span class="badge badge-pill badge-${item.type === 'node' ? 'success' : 'info'}">${item.details}</span>
+                            <span class="badge badge-pill badge-${item.type === 'node' ? 'success' : (item.type === 'edge' ? 'info' : 'warning')}">${item.details}</span>
                         </div>
                         <i class="fa fa-trash cart-remove" onclick="removeFromCart(${idx})" title="Eliminar"></i>
                     </div>

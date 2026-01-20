@@ -121,6 +121,7 @@
         const CENSORED_PATH = 'data/encrypted_data.txt';
         
         let CURRENT_FILTER = 'pending';
+        let currentFetchController = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             if (!Auth.isAuthenticated()) {
@@ -184,16 +185,26 @@
             const container = document.getElementById('suggestions-list');
             const loader = document.getElementById('loading');
             
+            // Abort previous request if active
+            if (currentFetchController) {
+                currentFetchController.abort();
+            }
+            currentFetchController = new AbortController();
+
             container.innerHTML = '';
             loader.style.display = 'block';
 
             try {
                 // Pass status filter param AND token for security check
                 const token = Auth.getToken();
-                const response = await fetch(CONFIG.scriptUrl + `?action=get_suggestions&status=${CURRENT_FILTER}&token=${token}`);
+                const response = await fetch(
+                    CONFIG.scriptUrl + `?action=get_suggestions&status=${CURRENT_FILTER}&token=${token}`,
+                    { signal: currentFetchController.signal }
+                );
                 const data = await response.json();
                 
                 loader.style.display = 'none';
+                currentFetchController = null;
 
                 // Handle Backend Error
                 if (data.status === 'error') {
@@ -214,6 +225,7 @@
                 }
 
             } catch (e) {
+                if (e.name === 'AbortError') return; // Ignore aborts
                 console.error(e);
                 loader.style.display = 'none';
                 alert('Error carregant suggeriments: ' + e.message);
@@ -229,14 +241,19 @@
             if (Array.isArray(bundle.items)) {
                 itemsHtml = bundle.items.map((item, idx) => {
                     const uniqueId = `item-${bundle.id}-${idx}`;
-                    const badgeClass = item.type === 'node' ? 'badge-node' : 'badge-edge';
+                    let badgeClass = 'badge-secondary';
+                    if (item.type === 'node') badgeClass = 'badge-node';
+                    if (item.type === 'edge') badgeClass = 'badge-edge';
+                    if (item.type === 'other') badgeClass = 'badge-warning';
                     
                     // Basic Header Info
                     let headerInfo = '';
                     if (item.type === 'node') {
                         headerInfo = `<b>${item.payload.label}</b>`;
-                    } else {
+                    } else if (item.type === 'edge') {
                         headerInfo = `<b>${item.payload.source} ↔ ${item.payload.target}</b>`;
+                    } else {
+                        headerInfo = `<b>Sol·licitud Manual</b>`;
                     }
 
                     // Detailed Attributes Table
@@ -486,6 +503,7 @@
                 // --- STEP 3: Merge ---
                 let nodesAdded = 0;
                 let edgesAdded = 0;
+                let manualAck = 0;
                 
                 // --- INTEGRITY CHECKS ---
                 // Validate bundle items against CURRENT graphData (the source of truth)
@@ -554,10 +572,12 @@
                             comments: p.comments
                         });
                         edgesAdded++;
+                    } else if (item.type === 'other') {
+                        manualAck++;
                     }
                 });
 
-                if (nodesAdded === 0 && edgesAdded === 0) {
+                if (nodesAdded === 0 && edgesAdded === 0 && manualAck === 0) {
                     alert("No s'han aplicat canvis (ja existien?).");
                 }
                 
@@ -571,7 +591,7 @@
                 var nToken = new fernet.Token({ secret: secret, ttl: 0 }); // Secret constructed with keyUncensored
                 var newEncrytedUncensored = nToken.encode(JSON.stringify(graphData));
                 
-                const commitMsg = `Update Graph [Nodes: +${nodesAdded}, Edges: +${edgesAdded}] Transaction: ${bundle.id}`;
+                const commitMsg = `Update Graph [Nodes: +${nodesAdded}, Edges: +${edgesAdded}, Manual: ${manualAck}] Transaction: ${bundle.id}`;
 
                 const putUncensoredRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${UNCENSORED_PATH}`, {
                     method: 'PUT',
@@ -643,7 +663,7 @@
                 btn.innerText = 'Finalitzant...';
                 await updateStatus(bundle.id, 'accepted');
                 
-                alert(`Èxit! ${nodesAdded} nodes i ${edgesAdded} connexions afegides.\nS'han actualitzat els dos fitxers correctament.\n\nRecarregant dades d'aquí 5 segons...`);
+                alert(`Èxit! ${nodesAdded} nodes i ${edgesAdded} connexions afegides.\nTotal manual: ${manualAck}.\nS'han actualitzat els dos fitxers correctament.\n\nRecarregant dades d'aquí 5 segons...`);
                 
                 // Wait 5 seconds and reload (fetch again for verification/consistency)
                 setTimeout(() => {
