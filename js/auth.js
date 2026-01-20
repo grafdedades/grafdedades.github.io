@@ -16,7 +16,7 @@ const Auth = {
         const authUrl = `https://github.com/login/oauth/authorize?client_id=${CONFIG.clientId}&scope=${scope}&redirect_uri=${CONFIG.redirectUri}`;
         
         // Guardar estado para saber a dónde volver tras el login (por defecto root o graph)
-        const returnUrl = window.location.pathname.includes('admin') ? 'admin.html' : 'graph.html';
+        const returnUrl = window.location.pathname.includes('admin') ? 'pages/admin.html' : 'pages/graph.html';
         localStorage.setItem('auth_return_url', returnUrl);
         
         window.location.href = authUrl;
@@ -30,7 +30,7 @@ const Auth = {
         if (error) {
             console.error("OAuth Error:", error);
             alert("Accés denegat: L'usuari ha cancel·lat l'autorització.");
-            window.location.href = 'graph.html';
+            window.location.href = 'pages/graph.html';
             return;
         }
 
@@ -53,7 +53,7 @@ const Auth = {
                 await Auth.fetchUserInfo(data.access_token);
 
                 // Redirigir
-                const returnUrl = localStorage.getItem('auth_return_url') || 'graph.html';
+                const returnUrl = localStorage.getItem('auth_return_url') || 'pages/graph.html';
                 localStorage.removeItem('auth_return_url');
                 window.location.href = returnUrl;
             } else {

@@ -30,7 +30,7 @@ cp .env.example .env
 
 ### Updating Data
 
-Open the `Graph-updater.ipynb` notebook and follow the instructions.
+Open the `notebooks/Graph-updater.ipynb` notebook and follow the instructions.
 
 ### Committing Data Updates
 
@@ -62,7 +62,7 @@ python -m http.server 3000
 
 ## Architecture
 
-For details on the Suggestion & Admin Review system, see **[SUGGESTIONS_SYSTEM.md](SUGGESTIONS_SYSTEM.md)**.
+For details on the Suggestion & Admin Review system, see **[docs/SUGGESTIONS_SYSTEM.md](docs/SUGGESTIONS_SYSTEM.md)**.
 
 | Component | Technology |
 |-----------|------------|
@@ -76,7 +76,21 @@ For details on the Suggestion & Admin Review system, see **[SUGGESTIONS_SYSTEM.m
 ```
 grafdedades.github.io/
 ├── index.html              # Login page
-├── graph.html              # Visualization
+├── callback.html           # GitHub OAuth Callback
+├── pages/
+│   ├── graph.html          # Visualization
+│   ├── suggest.html        # Suggestion Form
+│   └── admin.html          # Admin Dashboard
+├── notebooks/
+│   ├── Admin-Notebook.ipynb # Admin Tools
+│   └── Graph-updater.ipynb  # Data Update Tool
+├── docs/
+│   └── SUGGESTIONS_SYSTEM.md
+├── css/
+│   └── login.css
+├── img/
+│   ├── favicon.png
+│   └── login/
 ├── data/
 │   ├── graph_data.enc      # ADMIN ONLY: Source of truth (Full data)
 │   └── encrypted_data.txt  # PUBLIC: Frontend data (Anonymized)
@@ -84,7 +98,9 @@ grafdedades.github.io/
 │   ├── models.py           # Data models
 │   ├── crypto.py           # Encryption
 │   └── storage.py          # File I/O
-└── js/                     # D3 visualization
+└── js/                     # Shared JS
+    ├── auth.js
+    └── login.js
 ```
 
 ---

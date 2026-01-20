@@ -16,7 +16,7 @@ $(window).on("load",  async () => {
             // Verify password
             if (bcrypt.compareSync(codi.val(), CodiCorrecteHash)) {
                 // Password correct - redirect
-                window.location.href = "graph.html";
+                window.location.href = "pages/graph.html";
             }
             else {
                 // Password wrong - delete from storage and warn
