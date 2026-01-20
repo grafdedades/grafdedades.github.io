@@ -22,7 +22,8 @@ The system operates on a **Serverless Hybrid Architecture**:
     *   This ensures every suggestion is linked to a verified real identity (GitHub username + real name provided in form).
 
 2.  **Creation**:
-    *   Users can create **Nodes** (People) or **Edges** (Connections).
+    *   Users can create **Nodes** (People), **Edges** (Connections), or **Manual Requests** (Other).
+    *   **Manual Requests**: Used for complex changes (e.g., deleting a node, merging duplicates) that require human intervention.
     *   The interface validates data (e.g., year ranges, duplicate checks against the live graph).
     *   Items are added to a temporary "Cart".
 
@@ -53,7 +54,9 @@ The system operates on a **Serverless Hybrid Architecture**:
     *   **Process**:
         1.  **Fetch**: Frontend fetches the *latest* `data/graph_data.enc` from GitHub (Master/Testing branch).
         2.  **Decrypt**: Decrypts the data in the browser using the password.
-        3.  **Merge**: Adds the new nodes/edges to the in-memory graph.
+        3.  **Merge**: 
+            *   **Nodes/Edges**: Adds the new items to the in-memory graph.
+            *   **Manual Requests**: These are *acknowledged* (counted) but **NOT added** to the graph automatically. The admin must apply these changes manually (e.g., by editing the JSON locally) if needed, or simply mark them as resolved.
         4.  **Encrypt**: Re-encrypts the updated graph (generating both `graph_data.enc` and the public `encrypted_data.txt`).
         5.  **Commit**: Uses the GitHub API to direct-commit/push the updated files to the repository.
         6.  **Close Loop**: Updates the Google Sheet status to `accepted` via Apps Script.
