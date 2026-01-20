@@ -78,7 +78,7 @@
 
     <script>
         // Store key in session for this tab only
-        let ENCRYPTION_KEY = sessionStorage.getItem('enc_key');
+        let ENCRYPTION_KEY = sessionStorage.getItem('pass') || sessionStorage.getItem('enc_key');
         const REPO_OWNER = 'grafdedades';
         const REPO_NAME = 'grafdedades.github.io';
         const BRANCH = 'testing'; // TARGET BRANCH
@@ -454,9 +454,51 @@
                 let nodesAdded = 0;
                 let edgesAdded = 0;
                 
+                // --- INTEGRITY CHECKS ---
+                // Validate bundle items against CURRENT graphData (the source of truth)
+                
+                // 1. Check for Duplicate Nodes
+                const graphNodeLabels = new Set(graphData.nodes.map(n => n.label.toLowerCase()));
+                bundle.items.forEach(item => {
+                    if (item.type === 'node') {
+                        if (graphNodeLabels.has(item.payload.label.toLowerCase())) {
+                            throw new Error(`Integrity Error: El node "${item.payload.label}" ja existeix al graf.`);
+                        }
+                        // Add to temp set so we don't add duplicates within the same bundle
+                        graphNodeLabels.add(item.payload.label.toLowerCase());
+                    }
+                });
+
+                // 2. Check for Duplicate Edges or Self-Loops
+                // Create a set of existing edges "source|target" (normalized order)
+                const graphEdges = new Set(graphData.edges.map(e => {
+                    const [s, t] = [e.source, e.target].sort();
+                    return `${s.toLowerCase()}|${t.toLowerCase()}`;
+                }));
+
+                bundle.items.forEach(item => {
+                    if (item.type === 'edge') {
+                        const p = item.payload;
+                        if (p.source.toLowerCase() === p.target.toLowerCase()) {
+                             throw new Error(`Integrity Error: Auto-bucle detectat (${p.source}).`);
+                        }
+                        const [s, t] = [p.source, p.target].sort();
+                        const key = `${s.toLowerCase()}|${t.toLowerCase()}`;
+                        
+                        if (graphEdges.has(key)) {
+                            throw new Error(`Integrity Error: L'aresta ${p.source} ↔ ${p.target} ja existeix.`);
+                        }
+                        graphEdges.add(key);
+                    }
+                });
+
+                // 3. Merging
+                // If validation passes, we proceed to merge
+                
                 bundle.items.forEach(item => {
                     const p = item.payload;
                     if (item.type === 'node') {
+                        // Double check redundant if validation works, but safe to keep
                         if (!graphData.nodes.find(n => n.label === p.label)) {
                             graphData.nodes.push({
                                 label: p.label,
@@ -467,8 +509,6 @@
                             nodesAdded++;
                         }
                     } else if (item.type === 'edge') {
-                        // Check duplicates before push? (Already filtered by frontend ideally, but good to be safe)
-                        // For now we assume frontend validity or just push.
                         graphData.edges.push({
                             source: p.source,
                             target: p.target,
@@ -570,7 +610,13 @@
                 btn.innerText = 'Finalitzant...';
                 await updateStatus(bundle.id, 'accepted');
                 
-                alert(`Èxit! ${nodesAdded} nodes i ${edgesAdded} connexions afegides.\nS'han actualitzat els dos fitxers correctament.`);
+                alert(`Èxit! ${nodesAdded} nodes i ${edgesAdded} connexions afegides.\nS'han actualitzat els dos fitxers correctament.\n\nRecarregant dades d'aquí 5 segons...`);
+                
+                // Wait 5 seconds and reload (fetch again for verification/consistency)
+                setTimeout(() => {
+                    location.reload(); 
+                }, 5000);
+                
                 loadSuggestions();
 
             } catch (err) {

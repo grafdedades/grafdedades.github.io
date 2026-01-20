@@ -1,1 +1,1 @@
-- automatic .env nottebook detection
+- backups (delete)

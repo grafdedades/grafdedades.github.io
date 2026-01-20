@@ -616,6 +616,10 @@ def _try_auto_load():
     try:
         env_path = Path(".env")
         if not env_path.exists():
+            # Try parent directory (if running from notebooks/ subdir)
+            env_path = Path("../.env")
+            
+        if not env_path.exists():
             return
 
         # Simple manual parsing to avoid dependencies
