@@ -439,8 +439,6 @@
                 }
             }
             yearInput.addEventListener('input', updateYearHint);
-            // Init with default/current value if any
-            updateYearHint();
 
             // --- SET DYNAMIC MAX YEAR & DEFAULTS ---
             const NOW = new Date();
@@ -462,6 +460,9 @@
             // Default Month
             const monthEl = document.getElementById('link-month');
             if (monthEl) monthEl.value = CURRENT_MONTH;
+            
+            // Init hint with default value
+            updateYearHint();
         });
 
         // --- FORM ---
