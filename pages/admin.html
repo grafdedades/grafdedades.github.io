@@ -13,10 +13,33 @@
         .badge-edge { background-color: #17a2b8; color: white; }
         
         /* Fix full height background to avoid "lines" at bottom of content */
-        html, body { height: 100%; min-height: 100vh; }
+        html, body { height: 100%; min-height: 100vh; margin: 0; padding: 0; overflow: hidden; background-color: #f8f9fa; }
+        
+        /* Flex Layout */
+        body { display: flex; flex-direction: column; }
+        .navbar { flex-shrink: 0; z-index: 1040; }
+        
+        .main-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        .fixed-header { 
+            flex-shrink: 0; 
+            background-color: #f8f9fa; 
+            z-index: 1020; 
+            padding-top: 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        
+        .scrollable-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            -webkit-overflow-scrolling: touch; /* Smooth scroll iOS */
+        }
     </style>
 </head>
-<body class="bg-light">
+<body>
     
     <nav class="navbar navbar-dark bg-dark">
         <a class="navbar-brand" href="#">Admin Dashboard</a>
@@ -28,43 +51,53 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
-        
-        <!-- Key Prompt -->
-        <div id="key-container" class="alert alert-warning" style="display:none;">
-            <h5>🔐 Desbloquejar Dades</h5>
-            <p>Per modificar el graf, introdueix la clau de xifrat actual:</p>
-            <div class="input-group">
-                <input type="password" id="enc-key" class="form-control" placeholder="Clau Fernet">
-                <div class="input-group-append">
-                    <button class="btn btn-warning" onclick="saveKey()">Desar Clau</button>
+    <div class="main-layout">
+        <!-- FIXED HEADER SECTION -->
+        <div class="fixed-header px-4">
+            <div class="container">
+                <!-- Key Prompt -->
+                <div id="key-container" class="alert alert-warning mb-3" style="display:none;">
+                    <h5>🔐 Desbloquejar Dades</h5>
+                    <p class="mb-2">Per modificar el graf, introdueix la clau de xifrat actual:</p>
+                    <div class="input-group input-group-sm">
+                        <input type="password" id="enc-key" class="form-control" placeholder="Clau Fernet">
+                        <div class="input-group-append">
+                            <button class="btn btn-warning" onclick="saveKey()">Desar Clau</button>
+                        </div>
+                    </div>
                 </div>
+
+                <h3 class="mb-3">Suggeriments</h3>
+                
+                <!-- Filters -->
+                <ul class="nav nav-tabs border-bottom-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="setFilter('pending', this)">Pendents</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="setFilter('accepted', this)">Acceptats</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="setFilter('rejected', this)">Rebutjats</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="setFilter('all', this)">Tots</a>
+                    </li>
+                </ul>
             </div>
         </div>
 
-        <h3>Suggeriments</h3>
-        
-        <!-- Filters -->
-        <ul class="nav nav-tabs mb-4">
-            <li class="nav-item">
-                <a class="nav-link active" href="#" onclick="setFilter('pending', this)">Pendents</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" onclick="setFilter('accepted', this)">Acceptats</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" onclick="setFilter('rejected', this)">Rebutjats</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" onclick="setFilter('all', this)">Tots</a>
-            </li>
-        </ul>
+        <!-- SCROLLABLE CONTENT SECTION -->
+        <div class="scrollable-content px-4 bg-light">
+            <div class="container">
+                <div id="loading" class="text-center py-5">
+                    <i class="fa fa-spinner fa-spin fa-3x text-muted"></i>
+                    <p class="mt-3">Carregant dades...</p>
+                </div>
 
-        <div id="loading" class="text-center py-5">
-            <i class="fa fa-spinner fa-spin fa-3x text-muted"></i>
+                <div id="suggestions-list" class="row"></div>
+            </div>
         </div>
-        
-        <div id="suggestions-list" class="row"></div>
     </div>
 
     <!-- Scripts -->

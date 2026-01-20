@@ -23,9 +23,25 @@
         .cart-remove:hover { color: #bd2130; }
 
         .step-header { border-bottom: 2px solid #f0f0f0; margin-bottom: 20px; padding-bottom: 10px; }
+        
+        /* Fixes */
+        html, body { height: 100%; min-height: 100vh; margin: 0; padding: 0; overflow: hidden; background-color: #f8f9fa; }
+        
+        /* Flex Layout */
+        body { display: flex; flex-direction: column; }
+        .navbar { flex-shrink: 0; z-index: 1040; }
+        
+        .main-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        .scrollable-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 2rem 1rem;
+            -webkit-overflow-scrolling: touch; 
+        }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container">
@@ -38,7 +54,7 @@
         </div>
     </nav>
 
-    <div class="container mt-5 mb-5" style="max-width: 800px;">
+    <div class="main-layout">
         
         <!-- Auth Loading -->
         <div id="loading-auth" class="text-center py-5">
@@ -48,158 +64,159 @@
 
         <!-- Unauth View -->
         <div id="unauth-msg" class="text-center py-5" style="display:none;">
-            <div class="alert alert-warning d-inline-block p-4 shadow-sm">
-                <h4><i class="fa fa-lock"></i> Accés Restringit</h4>
-                <p>Has d'iniciar sessió amb GitHub per enviar suggeriments.</p>
-                <button class="btn btn-dark mt-2" onclick="Auth.login()">Login amb GitHub</button>
+            <div class="container">
+                <div class="alert alert-warning d-inline-block p-4 shadow-sm">
+                    <h4><i class="fa fa-lock"></i> Accés Restringit</h4>
+                    <p>Has d'iniciar sessió amb GitHub per enviar suggeriments.</p>
+                    <button class="btn btn-dark mt-2" onclick="Auth.login()">Login amb GitHub</button>
+                </div>
             </div>
         </div>
 
         <!-- Main Form -->
-        <div id="main-content" style="display:none;">
+        <div id="main-content" style="display:none; height: 100%; flex-direction: column;">
             
-            <!-- SECTION 1: ADD ITEM -->
-            <div class="card shadow-sm mb-5">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                    <h4 class="mb-0 text-primary"><i class="fa fa-plus-circle"></i> Afegeix Nodos o Connexions</h4>
-                </div>
-                <div class="card-body">
+            <!-- SCROLLABLE CONTENT -->
+            <div class="scrollable-content">
+                <div class="container" style="max-width: 800px;">
                     
-                    <!-- Type Selector -->
-                    <div class="d-flex justify-content-center gap-4 mb-4">
-                        <div class="card p-3 m-2 type-select active text-center w-50 shadow-sm" onclick="setMode('node')" id="mode-node">
+                    <!-- TYPE SELECTOR (Moved here) -->
+                    <div class="d-flex justify-content-center gap-4 mb-4 pt-3">
+                        <div class="card py-4 m-2 type-select active text-center w-50 shadow-sm" onclick="setMode('node')" id="mode-node">
                             <i class="fa fa-user fa-2x mb-2 text-success"></i>
                             <h5 class="mb-0">Persona</h5>
-                            <small class="text-muted">Nou Node</small>
                         </div>
-                        <div class="card p-3 m-2 type-select text-center w-50 shadow-sm" onclick="setMode('edge')" id="mode-edge">
+                        <div class="card py-4 m-2 type-select text-center w-50 shadow-sm" onclick="setMode('edge')" id="mode-edge">
                             <i class="fa fa-link fa-2x mb-2 text-info"></i>
                             <h5 class="mb-0">Connexió</h5>
-                            <small class="text-muted">Entre persones</small>
                         </div>
                     </div>
 
-                    <form id="item-form">
-                        <input type="hidden" id="current-mode" value="node">
+                    <!-- SECTION 1: ITEMS FORM -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                             <form id="item-form">
+                                <input type="hidden" id="current-mode" value="node">
+                                
+                                <!-- NODE FIELDS -->
+                                <div id="fields-node">
+                                    <div class="form-group">
+                                        <label>Nom complet <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control form-control-lg autocomplete" id="node-name" placeholder="Ex: Maria García">
+                                        <div id="node-exists-warning" class="invalid-feedback" style="font-weight:bold; font-size: 0.9rem;">
+                                            <i class="fa fa-exclamation-triangle"></i> Atenció: Aquest nom ja existeix al graf.
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="col-md-6 mb-3">
+                                            <label>Any <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="node-year" placeholder="Ex: 2026" min="2017" max="2035">
+                                            <small id="year-hint" class="form-text text-primary font-italic"></small>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label>Gènere</label>
+                                            <select class="form-control" id="node-gender">
+                                                <option value="F">Dona</option>
+                                                <option value="M">Home</option>
+                                                <option value="-">Altre</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="node-cfis">
+                                            <label class="custom-control-label" for="node-cfis">És CFIS?</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- EDGE FIELDS -->
+                                <div id="fields-edge" style="display:none;">
+                                    <div class="form-group position-relative">
+                                        <label>Persona 1 <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control form-control-lg autocomplete" id="link-source" placeholder="Comença a escriure...">
+                                    </div>
+                                    <div class="form-group position-relative">
+                                        <label>Persona 2 <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control form-control-lg autocomplete" id="link-target" placeholder="Comença a escriure...">
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="col-md-6 mb-3">
+                                            <label>Tipus</label>
+                                            <select class="form-control" id="link-weight">
+                                                <option value="1">Lio (1 punt)</option>
+                                                <option value="2">Manual (2 punts)</option>
+                                                <option value="3">Oral (3 punts)</option>
+                                                <option value="5">Complert (5 punts)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label>Any <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="link-year" placeholder="2024" min="2017" max="2035">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="col-md-6 mb-3">
+                                            <label>Mes</label>
+                                            <select class="form-control" id="link-month">
+                                                <option value="">- Selecciona -</option>
+                                                <option value="1">Gener</option>
+                                                <option value="2">Febrer</option>
+                                                <option value="3">Març</option>
+                                                <option value="4">Abril</option>
+                                                <option value="5">Maig</option>
+                                                <option value="6">Juny</option>
+                                                <option value="7">Juliol</option>
+                                                <option value="8">Agost</option>
+                                                <option value="9">Setembre</option>
+                                                <option value="10">Octubre</option>
+                                                <option value="11">Novembre</option>
+                                                <option value="12">Desembre</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label>Lloc</label>
+                                            <input type="text" class="form-control" id="link-place" placeholder="Ex: Razzmatazz">
+                                        </div>
+                                    </div>
+                                    <div class="form-group mb-0">
+                                        <label>Comentaris</label>
+                                        <input type="text" class="form-control" id="link-comments" placeholder="Opcional">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-block mt-3 shadow-sm">
+                                    <i class="fa fa-plus"></i> Afegeix a la Llista
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: LIST & ACTIONS -->
+                    <div class="card border-0 bg-transparent">
+                        <div class="card-header bg-transparent border-0 pl-0 pb-2">
+                            <h5 class="mb-0 text-dark"><i class="fa fa-list"></i> La teva Llista d'enviament</h5>
+                        </div>
                         
-                        <!-- NODE FIELDS -->
-                        <div id="fields-node">
-                            <div class="form-group">
-                                <label>Nom complet <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-lg autocomplete" id="node-name" placeholder="Ex: Maria García">
-                                <div id="node-exists-warning" class="invalid-feedback" style="font-weight:bold; font-size: 0.9rem;">
-                                    <i class="fa fa-exclamation-triangle"></i> Atenció: Aquest nom ja existeix al graf.
-                                </div>
-                                <small class="form-text text-muted">Asegura't que no existeix ja usant el cercador del graf.</small>
-                            </div>
-                            <div class="form-row">
-                                <div class="col-md-6 mb-3">
-                                    <label>Any (Promoció / Generació) <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="node-year" placeholder="Ex: 2026" min="2017" max="2035">
-                                    <small id="year-hint" class="form-text text-primary font-italic"></small>
-                                    <div class="invalid-feedback">L'any ha de ser entre 2017 i 2035.</div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Gènere</label>
-                                    <select class="form-control" id="node-gender">
-                                        <option value="F">Dona</option>
-                                        <option value="M">Home</option>
-                                        <option value="-">Altre</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="node-cfis">
-                                    <label class="custom-control-label" for="node-cfis">És CFIS?</label>
-                                </div>
+                        <div id="cart-list" class="mb-4">
+                            <div class="text-center py-4 bg-white rounded shadow-sm border text-muted" id="empty-cart-msg">
+                                <i class="fa fa-inbox fa-2x mb-2 opacity-50"></i>
+                                <p class="mb-0 small">No hi ha elements pendents.</p>
                             </div>
                         </div>
 
-                        <!-- EDGE FIELDS -->
-                        <div id="fields-edge" style="display:none;">
-                            <div class="form-group position-relative">
-                                <label>Persona 1 <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-lg autocomplete" id="link-source" placeholder="Comença a escriure...">
-                            </div>
-                            <div class="form-group position-relative">
-                                <label>Persona 2 <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-lg autocomplete" id="link-target" placeholder="Comença a escriure...">
-                            </div>
-                            <div class="form-row">
-                                <div class="col-md-6 mb-3">
-                                    <label>Tipus de relació</label>
-                                    <select class="form-control" id="link-weight">
-                                        <option value="1">Lio (1 punt)</option>
-                                        <option value="2">Manual (2 punts)</option>
-                                        <option value="3">Oral (3 punts)</option>
-                                        <option value="5">Complert (5 punts)</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Any <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="link-year" placeholder="2024" min="2017" max="2035">
-                                    <div class="invalid-feedback">L'any ha de ser entre 2017 i 2035.</div>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="col-md-6 mb-3">
-                                    <label>Mes (Opcional)</label>
-                                    <select class="form-control" id="link-month">
-                                        <option value="">- Selecciona -</option>
-                                        <option value="1">Gener</option>
-                                        <option value="2">Febrer</option>
-                                        <option value="3">Març</option>
-                                        <option value="4">Abril</option>
-                                        <option value="5">Maig</option>
-                                        <option value="6">Juny</option>
-                                        <option value="7">Juliol</option>
-                                        <option value="8">Agost</option>
-                                        <option value="9">Setembre</option>
-                                        <option value="10">Octubre</option>
-                                        <option value="11">Novembre</option>
-                                        <option value="12">Desembre</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Lloc (Opcional)</label>
-                                    <input type="text" class="form-control" id="link-place" placeholder="Ex: Razzmatazz">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Comentaris (Lloc, detalls...)</label>
-                                <input type="text" class="form-control" id="link-comments" placeholder="Opcional">
-                            </div>
+                        <div class="text-right pb-5">
+                            <button id="btn-proceed" class="btn btn-info btn-lg px-5 shadow" disabled onclick="openSubmitModal()">
+                                Procedir a l'enviament <i class="fa fa-arrow-right ml-2"></i>
+                            </button>
                         </div>
-
-                        <button type="submit" class="btn btn-primary btn-lg btn-block mt-4 shadow-sm">
-                            <i class="fa fa-plus"></i> Afegeix a la Llista
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- SECTION 2: LIST & ACTIONS -->
-            <div class="card border-0 bg-transparent">
-                <div class="card-header bg-transparent border-0 pl-0 pb-2">
-                    <h4 class="mb-0 text-dark"><i class="fa fa-list"></i> La teva Llista d'enviament</h4>
-                </div>
-                
-                <div id="cart-list" class="mb-4">
-                    <div class="text-center py-5 bg-white rounded shadow-sm border text-muted" id="empty-cart-msg">
-                        <i class="fa fa-inbox fa-3x mb-3 opacity-50"></i>
-                        <p>No hi ha elements pendents.<br>Utilitza el formulari de dalt per afegir-ne.</p>
                     </div>
-                </div>
 
-                <div class="text-right">
-                    <button id="btn-proceed" class="btn btn-info btn-lg px-5 shadow" disabled onclick="openSubmitModal()">
-                        Procedir a l'enviament <i class="fa fa-arrow-right ml-2"></i>
-                    </button>
                 </div>
             </div>
-
         </div>
+
+    </div>
 
         <!-- Submit Modal -->
         <div class="modal fade" id="submitModal" tabindex="-1" role="dialog">
@@ -348,7 +365,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             if (Auth.isAuthenticated()) {
                 document.getElementById('loading-auth').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
+                document.getElementById('main-content').style.display = 'flex'; // CHANGED TO FLEX
             } else {
                 document.getElementById('loading-auth').style.display = 'none';
                 document.getElementById('unauth-msg').style.display = 'block';
