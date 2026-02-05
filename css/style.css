@@ -105,6 +105,11 @@ svg {
   main {
     height: 100vh !important;
   }
+
+  /* Ensure sidebar bottom buttons are not covered by browser address bar */
+  #sidebar {
+    padding-bottom: 120px !important;
+  }
   
   /* Show floating menu toggle */
   #floatingMenuToggle {

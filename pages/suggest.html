@@ -254,8 +254,19 @@
                             <small class="text-muted"><i class="fa fa-lock"></i> No es publicarà. Només visible per admins.</small>
                         </div>
                         <div class="form-group">
+                            <label>Curs Actual <span class="text-danger">*</span></label>
+                            <select class="form-control bg-light" id="meta-course">
+                                <option value="">- Selecciona el teu curs -</option>
+                                <option value="Primer">Primer</option>
+                                <option value="Segon">Segon</option>
+                                <option value="Tercer">Tercer</option>
+                                <option value="Quart">Quart</option>
+                                <option value="Alumni">Alumni</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>Comentaris Generals</label>
-                            <textarea class="form-control" id="meta-comments" rows="3" placeholder="Comentaris adicionals per facilitar el proces de verificació de la solicitud (opcional) ej: curs,...."></textarea>
+                            <textarea class="form-control" id="meta-comments" rows="3" placeholder="Comentaris adicionals per facilitar el proces de verificació..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
@@ -311,8 +322,14 @@
 
         window.submitAll = async function() {
             const realName = document.getElementById('meta-realname').value.trim();
+            const course = document.getElementById('meta-course').value;
+
             if (!realName) {
                 alert("Si us plau, introdueix el teu nom real per validar (confidencial).");
+                return;
+            }
+            if (!course) {
+                alert("Si us plau, indica el teu curs.");
                 return;
             }
 
@@ -327,11 +344,14 @@
             // Let's change the submit button in the modal to loading state before hiding?
             // Simplified: just wait.
             
+            const rawComment = document.getElementById('meta-comments').value;
+            const fullComment = `[Curs: ${course}] ${rawComment}`.trim();
+
             const bundle = {
                 user: Auth.getUser(),
                 meta: {
                     realName: realName,
-                    comment: document.getElementById('meta-comments').value
+                    comment: fullComment
                 },
                 items: CART
             };
@@ -350,6 +370,7 @@
                     CART = [];
                     renderCart();
                     document.getElementById('meta-realname').value = '';
+                    document.getElementById('meta-course').value = '';
                     document.getElementById('meta-comments').value = '';
                 } else {
                     alert('Error del servidor: ' + res.message);
