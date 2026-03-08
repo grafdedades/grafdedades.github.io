@@ -9,11 +9,13 @@ function edgeinfo(e) {
     edge_info += "<b>Lloc: </b>" + e.place + "<br/>";
   }
   if (e.year !== "" || e.month != ""){
-    edge_info += "<b>Data: </b>" + e.month + (e.month === "" ? "" : " ") + e.year + "<br/>";
+    var monthNames = ["", "Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
+    var monthStr = (e.month >= 1 && e.month <= 12) ? monthNames[e.month] : "";
+    edge_info += "<b>Data: </b>" + monthStr + (monthStr === "" ? "" : " ") + e.year + "<br/>";
   }
   if (e.comments !== "") edge_info += "<b>Comentaris: </b>" + e.comments + "<br/>";
   edge_info += "<b>Pes: </b>" + e.weight + "<br/>";
-  edge_info += "<b>Han repetit?: </b>" + e.repeated + "<br/>";
+  edge_info += "<b>Relació: </b>" + e.relationship + "<br/>";
   edge_info += "<p/>"
 
   d3.select("#div1").html(edge_info)

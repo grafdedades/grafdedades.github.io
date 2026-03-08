@@ -238,18 +238,18 @@ edge_place = widgets.Text(
 )
 
 # Month mapping for defaults
-_month_map = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
-              7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
+_month_map = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6,
+              7: 7, 8: 8, 9: 9, 10: 10, 11: 11, 12: 12}
 
 edge_month = widgets.Dropdown(
     options=[
-        ('Gener', 'Jan'), ('Febrer', 'Feb'), ('Març', 'Mar'),
-        ('Abril', 'Apr'), ('Maig', 'May'), ('Juny', 'Jun'),
-        ('Juliol', 'Jul'), ('Agost', 'Aug'), ('Setembre', 'Sep'),
-        ('Octubre', 'Oct'), ('Novembre', 'Nov'), ('Desembre', 'Dec'),
-        ('Desconegut', '')
+        ('Gener', 1), ('Febrer', 2), ('Març', 3),
+        ('Abril', 4), ('Maig', 5), ('Juny', 6),
+        ('Juliol', 7), ('Agost', 8), ('Setembre', 9),
+        ('Octubre', 10), ('Novembre', 11), ('Desembre', 12),
+        ('Desconegut', None)
     ],
-    value=_month_map.get(datetime.now().month, ''),
+    value=_month_map.get(datetime.now().month, None),
     description='Mes:',
     style={'description_width': 'initial'}
 )
@@ -467,11 +467,11 @@ modify_year = widgets.BoundedIntText(
 
 modify_month = widgets.Dropdown(
     options=[
-        ('Gener', 'Jan'), ('Febrer', 'Feb'), ('Març', 'Mar'),
-        ('Abril', 'Apr'), ('Maig', 'May'), ('Juny', 'Jun'),
-        ('Juliol', 'Jul'), ('Agost', 'Aug'), ('Setembre', 'Sep'),
-        ('Octubre', 'Oct'), ('Novembre', 'Nov'), ('Desembre', 'Dec'),
-        ('Desconegut', '')
+        ('Gener', 1), ('Febrer', 2), ('Març', 3),
+        ('Abril', 4), ('Maig', 5), ('Juny', 6),
+        ('Juliol', 7), ('Agost', 8), ('Setembre', 9),
+        ('Octubre', 10), ('Novembre', 11), ('Desembre', 12),
+        ('Desconegut', None)
     ],
     description='Mes:',
     style={'description_width': 'initial'}
@@ -551,8 +551,10 @@ def on_search_click(_):
             modify_weight.value = edge.weight
             if edge.year:
                 modify_year.value = edge.year
-            if edge.month:
+            if edge.month is not None:
                 modify_month.value = edge.month
+            else:
+                modify_month.value = None
             modify_repeated.value = edge.repeated
             modify_relationship.value = edge.relationship
             modify_place.value = edge.place or ''

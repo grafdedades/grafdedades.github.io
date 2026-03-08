@@ -47,7 +47,7 @@ class Edge(BaseModel):
     target: str
     weight: int  # Usually 1, 2, 3, or 5
     place: str = ""
-    month: str = ""  # Accepts any format (Jan, Set, Març, etc.)
+    month: Optional[int] = None  # Integer instead of string (1-12)
     year: Optional[int] = None
     repeated: bool = False
     relationship: bool = False

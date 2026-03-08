@@ -258,7 +258,12 @@
 
                     // Detailed Attributes Table
                     const attributes = Object.entries(item.payload).map(([k, v]) => {
-                         return `<tr><th style="width:120px">${k}</th><td>${v}</td></tr>`;
+                         let displayVal = v;
+                         if (k === 'month' && v) {
+                             const months = ["", "Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
+                             displayVal = (v >= 1 && v <= 12) ? months[v] : v;
+                         }
+                         return `<tr><th style="width:120px">${k}</th><td>${displayVal}</td></tr>`;
                     }).join('');
 
                     return `
@@ -565,7 +570,7 @@
                             target: p.target,
                             weight: parseInt(p.weight),
                             year: parseInt(p.year),
-                            month: p.month || '',
+                            month: p.month ? parseInt(p.month) : null,
                             place: p.place || '',
                             repeated: p.repeated === 'true' || p.repeated === true,
                             relationship: p.relationship === 'true' || p.relationship === true,

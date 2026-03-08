@@ -586,7 +586,7 @@
                         source: source,
                         target: target,
                         year: yearVal,
-                        month: document.getElementById('link-month').value,
+                        month: parseInt(document.getElementById('link-month').value) || null,
                         place: document.getElementById('link-place').value.trim(),
                         weight: parseInt(document.getElementById('link-weight').value),
                         comments: document.getElementById('link-comments').value
