@@ -128,11 +128,13 @@ function createForceNetwork(nodes, edges) {
     .linkStrength(0.4)
 
 
-  container.selectAll("line")
+  // Visual line
+  container.selectAll(".edge-vis")
     .data(edges)
     .enter()
     .append("line")
-    .on("click", edgeClick)
+    .attr("class", "edge-vis")
+    .style("pointer-events", "none") // prevent hover intercept
     .style("stroke-width", function(d) {
       return d.weight
     })
@@ -142,7 +144,18 @@ function createForceNetwork(nodes, edges) {
       } else {
         return "#E74C3C"
       }
-    })
+    });
+
+  // Invisible hit area for easier clicking
+  container.selectAll(".edge-hit")
+    .data(edges)
+    .enter()
+    .append("line")
+    .attr("class", "edge-hit")
+    .on("click", edgeClick)
+    .style("stroke-width", 15) // much wider hit area
+    .style("stroke", "transparent")
+    .style("cursor", "pointer");
 
   var nodeEnter = container.selectAll("g.node")
     .data(nodes)
@@ -229,17 +242,18 @@ function createForceNetwork(nodes, edges) {
 
   function SearchNode() {
     reset();
-    var name = document.getElementById("search_bar").value
+    var name = document.getElementById("search_bar").value;
+    var normalizedName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
-    var node = null
+    var node = null;
     nodes.forEach(function(n) {
-      if (n.label == name) {
-        node = n
+      if (n.label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() == normalizedName) {
+        node = n;
       }
-    })
+    });
 
     if (node != null) {
-      nodeinfo(node)
+      nodeinfo(node);
       nodeF(node);
     }
   }
@@ -400,7 +414,7 @@ function createForceNetwork(nodes, edges) {
         egoIDs.push(p.source.id);
       });
 
-      d3.selectAll("line").filter(function(p) {
+      d3.selectAll(".edge-vis").filter(function(p) {
           return filteredEdges.indexOf(p) == -1
         })
         .style("opacity", "0.3")
@@ -438,7 +452,7 @@ function createForceNetwork(nodes, edges) {
       }
     });
 
-    d3.selectAll("line").filter(function(p) {
+    d3.selectAll(".edge-vis").filter(function(p) {
         return filteredEdges.indexOf(p) == -1
       })
       .style("opacity", "0.3")
@@ -474,7 +488,7 @@ function createForceNetwork(nodes, edges) {
       egoIDs.push(p.source.id);
     });
     
-    d3.selectAll("line").filter(function(p) {
+    d3.selectAll(".edge-vis").filter(function(p) {
         return filteredEdges.indexOf(p) == -1;
       })
       .style("opacity", "0.3")
@@ -514,7 +528,7 @@ function createForceNetwork(nodes, edges) {
       }
     });
     
-    d3.selectAll("line").filter(function(p) {
+    d3.selectAll(".edge-vis").filter(function(p) {
         return filteredEdges.indexOf(p) == -1;
       })
       .style("opacity", "0.3")
@@ -591,7 +605,7 @@ function createForceNetwork(nodes, edges) {
       .style("opacity", "1")
       .style("stroke", color_n);
 
-    d3.selectAll("line")
+    d3.selectAll(".edge-vis")
       .style("stroke-width", function(d) {
         return d.weight
       })
@@ -651,7 +665,7 @@ function createForceNetwork(nodes, edges) {
           egoIDs.push(p.source.id)
         }
       });
-    d3.selectAll("line").filter(function(p) {
+    d3.selectAll(".edge-vis").filter(function(p) {
         return filteredEdges.indexOf(p) == -1
       })
       .style("opacity", "0.3")
@@ -692,7 +706,7 @@ function createForceNetwork(nodes, edges) {
       }
     });
 
-    d3.selectAll("line").filter(function(p) {
+    d3.selectAll(".edge-vis").filter(function(p) {
         return filteredEdges.indexOf(p) == -1
       })
       .style("opacity", "0.3")
@@ -777,8 +791,11 @@ function createForceNetwork(nodes, edges) {
         this.parentNode.appendChild(a);
         /*for each item in the array...*/
         for (i = 0; i < arr.length; i++) {
+          /*normalize strings to ignore accents*/
+          let normalizedArrItem = arr[i].normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          let normalizedVal = val.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           /*check if the item starts with the same letters as the text field value:*/
-          if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+          if (normalizedArrItem.substr(0, normalizedVal.length).toUpperCase() == normalizedVal.toUpperCase()) {
             /*create a DIV element for each matching element:*/
             b = document.createElement("DIV");
             /*make the matching letters bold:*/
