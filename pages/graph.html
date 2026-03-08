@@ -101,47 +101,51 @@
     <section id="graf" style="display: flex; height: 100%; margin: 0; overflow: hidden; position: relative;">
 
       <!-- Left Menu (ranking, search_bar and info) -->
-      <div id="sidebar" class="card bg-dark sidebar-open" style="width: 280px; min-width: 280px; height: 100%; overflow-y: auto; overflow-x: hidden; transition: margin-left 0.3s ease;">
+      <div id="sidebar" class="card bg-dark sidebar-open" style="display: flex; flex-direction: column; width: 280px; min-width: 280px; height: 100%; overflow-x: hidden; transition: margin-left 0.3s ease;">
 
         <!--
         Rankings
         -->
-        <div class="card border-primary mb-3" style="height: 250px; margin: 15px 10px 20px 10px;">
-          <div class="card-header" style="background-color:#DEB887;text-align:center;"><h4 style="margin: 0px;"  >Rankings</h4></div>
-          <div class="card-body" style="padding: 10px 10px 0px;">
-            <ul class="nav nav-tabs card-title">
-              <select class='legend-title' style="font-size: 20px;" name="selector" onchange="menu(this.value)">
-                <option value="not-choosen" selected disabled hidden>Choose here</option>
-               <option value = "ranking_a" >Ranking arestes</option>
-               <option value = "ranking_p">Ranking punts</option>
-               <option value = "ranking_m">Ranking average</option>
-              </select>
-            </ul>
-          </div>
-          <div id="myTabContent" class="tab-content card-text" style="padding-left: 20px; padding-right: 10px;">
-            <div class="labels2" style="font-size: 17px;" id="no_choose">
-              <p style="height: 80px; text-align: center; opacity:0.5;"> CHOOSE A RANKING </p>
+        <div class="card border-primary mb-3" id="rankingCard" style="margin: 15px 10px 20px 10px;">
+          <button id="rankingToggle" class="card-header btn btn-block" style="background-color:#DEB887; text-align:center; padding: 0.75rem 1.25rem; font-weight: bold; border-radius: calc(0.25rem - 1px) calc(0.25rem - 1px) 0 0; border: none; outline: none; box-shadow: none;">
+            <h4 style="margin: 0px; color: black; font-family: 'Montserrat', sans-serif;">Rankings <span id="rankingIndicator" style="font-size: 16px;"></span></h4>
+          </button>
+          <div id="rankingContent">
+            <div class="card-body" style="padding: 10px 10px 0px;">
+              <ul class="nav nav-tabs card-title">
+                <select class='legend-title' style="font-size: 20px;" name="selector" onchange="menu(this.value)">
+                  <option value="not-choosen" selected disabled hidden>Choose here</option>
+                 <option value = "ranking_a" >Ranking arestes</option>
+                 <option value = "ranking_p">Ranking punts</option>
+                 <option value = "ranking_m">Ranking average</option>
+                </select>
+              </ul>
             </div>
-            <div class="labels2" style="font-size: 17px;" id="rank_p">
-              <p id="rank_1_p" style="margin-bottom:0px;"></p>
-              <p id="rank_2_p" style="margin-bottom:0px;"></p>
-              <p id="rank_3_p" style="margin-bottom:0px;"></p>
-              <p id="rank_4_p" style="margin-bottom:0px;"></p>
-              <p id="rank_5_p" style="margin-bottom:10px;"></p>
-            </div>
-            <div class="labels2" style="font-size: 17px;" id="rank_a">
-              <p id="rank_1_a" style="margin-bottom:0px;"></p>
-              <p id="rank_2_a" style="margin-bottom:0px;"></p>
-              <p id="rank_3_a" style="margin-bottom:0px;"></p>
-              <p id="rank_4_a" style="margin-bottom:0px;"></p>
-              <p id="rank_5_a" style="margin-bottom:10px;"></p>
-            </div>
-            <div class="labels2" style="font-size: 17px;" id="rank_m">
-              <p id="rank_1_m" style="margin-bottom:0px;"></p>
-              <p id="rank_2_m" style="margin-bottom:0px;"></p>
-              <p id="rank_3_m" style="margin-bottom:0px;"></p>
-              <p id="rank_4_m" style="margin-bottom:0px;"></p>
-              <p id="rank_5_m" style="margin-bottom:10px;"></p>
+            <div id="myTabContent" class="tab-content card-text" style="padding-left: 20px; padding-right: 10px;">
+              <div class="labels2" style="font-size: 17px;" id="no_choose">
+                <p style="height: 80px; text-align: center; opacity:0.5;"> CHOOSE A RANKING </p>
+              </div>
+              <div class="labels2" style="font-size: 17px;" id="rank_p">
+                <p id="rank_1_p" style="margin-bottom:0px;"></p>
+                <p id="rank_2_p" style="margin-bottom:0px;"></p>
+                <p id="rank_3_p" style="margin-bottom:0px;"></p>
+                <p id="rank_4_p" style="margin-bottom:0px;"></p>
+                <p id="rank_5_p" style="margin-bottom:10px;"></p>
+              </div>
+              <div class="labels2" style="font-size: 17px;" id="rank_a">
+                <p id="rank_1_a" style="margin-bottom:0px;"></p>
+                <p id="rank_2_a" style="margin-bottom:0px;"></p>
+                <p id="rank_3_a" style="margin-bottom:0px;"></p>
+                <p id="rank_4_a" style="margin-bottom:0px;"></p>
+                <p id="rank_5_a" style="margin-bottom:10px;"></p>
+              </div>
+              <div class="labels2" style="font-size: 17px;" id="rank_m">
+                <p id="rank_1_m" style="margin-bottom:0px;"></p>
+                <p id="rank_2_m" style="margin-bottom:0px;"></p>
+                <p id="rank_3_m" style="margin-bottom:0px;"></p>
+                <p id="rank_4_m" style="margin-bottom:0px;"></p>
+                <p id="rank_5_m" style="margin-bottom:10px;"></p>
+              </div>
             </div>
           </div>
         </div>
@@ -162,13 +166,13 @@
         <!--
         Info
         -->
-        <div class="card-body text-white" style="padding-left: 30px;">
-          <div class="tooltip"  id="div1"></div>
-          <div class="tooltip2" id="div2"></div>
+        <div class="card-body text-white" style="padding-left: 30px; padding-right: 15px;">
+          <div class="tooltip" id="div1" style="pointer-events: auto; display: none;"></div>
+          <div class="tooltip2" id="div2" style="pointer-events: auto; display: none;"></div>
         </div>
 
         <!-- Instagram link at bottom of sidebar -->
-        <div style="margin-top: auto; padding: 20px; text-align: center;">
+        <div style="flex-shrink: 0; padding: 20px; text-align: center;">
           <a href="https://instagram.com/data.graf" class="text-white" style="font-size: 20px; text-decoration: none; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
             <i class="fa fa-instagram" style="position: static; color: inherit; margin-right: 10px;"></i> @data.graf
           </a>
@@ -413,10 +417,33 @@
         sidebar.classList.toggle('sidebar-open');
         sidebar.classList.toggle('sidebar-closed');
       });
+
+      // Ranking toggle
+      var rankingToggle = document.getElementById('rankingToggle');
+      var rankingContent = document.getElementById('rankingContent');
+      var rankingIndicator = document.getElementById('rankingIndicator');
+      if (rankingToggle && rankingContent && rankingIndicator) {
+        // Always collapsed by default
+        rankingContent.style.display = 'none';
+        rankingIndicator.textContent = '▼';
+        rankingToggle.addEventListener('click', function() {
+          if (rankingContent.style.display === 'none') {
+            rankingContent.style.display = 'block';
+            rankingIndicator.textContent = '\u25b2';
+          } else {
+            rankingContent.style.display = 'none';
+            rankingIndicator.textContent = '\u25bc';
+          }
+          // Re-apply height to visible tooltip after layout change
+          setTimeout(function() {
+            if (typeof refreshInfoHeight === 'function') refreshInfoHeight();
+          }, 50);
+        });
+      }
       
       // Handle window resize
       window.addEventListener('resize', function() {
-        // Just ensure transitions still work after resize
+        if (typeof refreshInfoHeight === 'function') refreshInfoHeight();
       });
     })();
   </script>

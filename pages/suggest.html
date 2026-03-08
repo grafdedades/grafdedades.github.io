@@ -184,9 +184,15 @@
                                             <input type="text" class="form-control" id="link-place" placeholder="Ex: Razzmatazz">
                                         </div>
                                     </div>
-                                    <div class="form-group mb-0">
+                                    <div class="form-group mb-3">
                                         <label>Comentaris</label>
                                         <input type="text" class="form-control" id="link-comments" placeholder="Opcional">
+                                    </div>
+                                    <div class="form-group mb-0">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="link-relationship">
+                                            <label class="custom-control-label" for="link-relationship">Tenen o han tingut una relació?</label>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -589,7 +595,8 @@
                         month: parseInt(document.getElementById('link-month').value) || null,
                         place: document.getElementById('link-place').value.trim(),
                         weight: parseInt(document.getElementById('link-weight').value),
-                        comments: document.getElementById('link-comments').value
+                        comments: document.getElementById('link-comments').value,
+                        relationship: document.getElementById('link-relationship').checked
                     }
                 };
             } else if (mode === 'other') {

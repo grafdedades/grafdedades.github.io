@@ -1,41 +1,118 @@
+// Compute available pixel height for the info panels
+function getInfoMaxHeight() {
+  var sidebar = document.getElementById('sidebar');
+  var infoBody = document.querySelector('.card-body.text-white');
+  var bottom = document.querySelector('[style*="flex-shrink: 0"]');
+  if (!sidebar || !infoBody) return 200;
+  var sidebarBottom = sidebar.getBoundingClientRect().bottom;
+  var infoBodyTop = infoBody.getBoundingClientRect().top;
+  var bottomHeight = bottom ? bottom.getBoundingClientRect().height : 0;
+  return Math.max(80, sidebarBottom - infoBodyTop - bottomHeight - 20);
+}
+
+// Re-apply height to whichever tooltip is currently visible
+function refreshInfoHeight() {
+  var maxH = getInfoMaxHeight();
+  var div1 = document.getElementById('div1');
+  var div2 = document.getElementById('div2');
+  if (div1 && div1.style.display !== 'none') {
+    div1.style.maxHeight = maxH + 'px';
+  }
+  if (div2 && div2.style.display !== 'none') {
+    div2.style.maxHeight = maxH + 'px';
+  }
+}
 // Display edge infos
 function edgeinfo(e) {
-  d3.select("#div1").transition()
-    .duration(200)
-    .style("opacity", .9);
-  var edge_info = "<h5 class=\"text-white card-title\" style=\"margin-bottom:0;\">" + e.source.label + " i " + e.target.label + "</h5>";
-  edge_info += "<p class=\"text-white card-text\">"
+  var maxH = getInfoMaxHeight();
+  var div1 = document.getElementById('div1');
+  div1.style.display = 'block';
+  div1.style.opacity = '0.9';
+  div1.style.overflow = 'hidden';
+  div1.style.maxHeight = maxH + 'px';
+  div1.style.display = 'flex';
+  div1.style.flexDirection = 'column';
+
+  // Clickable node names that navigate to their info
+  var srcLabel = "<span onclick='_showNodeInfo(\"" + e.source.label + "\")' style='cursor:pointer; text-decoration:underline; color:#DEB887;'>" + e.source.label + "</span>";
+  var tgtLabel = "<span onclick='_showNodeInfo(\"" + e.target.label + "\")' style='cursor:pointer; text-decoration:underline; color:#DEB887;'>" + e.target.label + "</span>";
+
+  var edge_info = "<h5 class=\"text-white card-title\" style=\"margin-bottom:0; flex-shrink:0;\">" + srcLabel + " i " + tgtLabel + "</h5>";
+  edge_info += "<div style=\"flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding-right: 5px; margin-top: 10px; min-height: 0;\"><p class=\"text-white card-text\">";
   if (e.place !== "") {
     edge_info += "<b>Lloc: </b>" + e.place + "<br/>";
   }
   if (e.year !== "" || e.month != ""){
-    var monthNames = ["", "Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
+    var monthNames = ["", "Gener", "Febrer", "Mar\u00e7", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
     var monthStr = (e.month >= 1 && e.month <= 12) ? monthNames[e.month] : "";
     edge_info += "<b>Data: </b>" + monthStr + (monthStr === "" ? "" : " ") + e.year + "<br/>";
   }
   if (e.comments !== "") edge_info += "<b>Comentaris: </b>" + e.comments + "<br/>";
-  edge_info += "<b>Pes: </b>" + e.weight + "<br/>";
-  edge_info += "<b>Relació: </b>" + e.relationship + "<br/>";
-  edge_info += "<p/>"
+  var tipusMap = {1: 'Lio', 2: 'Manual', 3: 'Oral', 5: 'Complet'};
+  var tipusLabel = tipusMap[e.weight] || e.weight;
+  edge_info += "<b>Tipus: </b>" + tipusLabel + "<br/>";
+  edge_info += "<b>Relaci\u00f3: </b>" + e.relationship + "<br/>";
+  edge_info += "</p></div>";
 
-  d3.select("#div1").html(edge_info)
-  d3.select("#div2").style("opacity", 0);
+  div1.innerHTML = edge_info;
+  document.getElementById('div2').style.display = 'none';
 };
+
+// Helper: find node object by label and show node info
+function _showNodeInfo(label) {
+  var node = null;
+  for (var i = 0; i < nodes.length; i++) {
+    if (nodes[i].label === label) { node = nodes[i]; break; }
+  }
+  if (node) {
+    nodeinfo(node);
+    if (typeof nodeF === 'function') nodeF(node);
+  }
+}
+
+// Helper: show edge info by index in the global edges array
+function _showEdgeFromIdx(idx) {
+  var edge = edges[idx];
+  if (!edge) return;
+  edgeinfo(edge);
+  if (typeof window.edgeF === 'function') window.edgeF(edge);
+}
 
 // Display info about node
 function nodeinfo(e){
-    d3.select("#div2").transition()
-        .duration(200)
-        .style("opacity", .9);
-      var node_info = "<h5 class=\"text-white card-title\" style=\"margin-bottom:0;\">" + e.label +"</h5>";
-        node_info += "<b>Sexe: </b>" + e.gender + "<br/>";
-        node_info += "<b>Any: </b>" + e.year + "<br/>";
-        node_info += "<b>CFIS: </b>" + e.cfis + "<br/>";
-        node_info += "<b>Arestes: </b>" + e.degree + "<br/>";
-        node_info += "<b>Points: </b>" + e.points + "<br/>";
-        node_info += "<b>Average: </b>" + e.average + "<br/>";
-      d3.select("#div2").html(node_info)
-      d3.select("#div1").style("opacity", 0);
+  var maxH = getInfoMaxHeight();
+  var div2 = document.getElementById('div2');
+  div2.style.display = 'block';
+  div2.style.opacity = '0.9';
+  div2.style.overflowY = 'auto';
+  div2.style.maxHeight = maxH + 'px';
+
+  var node_info = "<h5 class=\"text-white card-title\" style=\"margin-bottom:0;\">" + e.label +"</h5>";
+  node_info += "<b>Sexe: </b>" + e.gender + "<br/>";
+  node_info += "<b>Any: </b>" + e.year + "<br/>";
+  node_info += "<b>CFIS: </b>" + e.cfis + "<br/>";
+  node_info += "<b>Arestes: </b>" + e.degree + "<br/>";
+  node_info += "<b>Points: </b>" + e.points + "<br/>";
+  node_info += "<b>Average: </b>" + e.average + "<br/>";
+
+  // Build neighbour list
+  var neighbours = edges.filter(function(edge) {
+    return edge.source === e || edge.target === e;
+  });
+  if (neighbours.length > 0) {
+    node_info += "<hr style='border-color: rgba(255,255,255,0.2); margin: 8px 0;'/>";
+    node_info += "<b style='font-size:13px;'>Ve\u00efns:</b><ul style='padding-left:16px; margin: 4px 0; list-style: disc;'>";
+    neighbours.forEach(function(edge) {
+      var neighbour = edge.source === e ? edge.target : edge.source;
+      // Store edge index for onclick access
+      var edgeIdx = edges.indexOf(edge);
+      node_info += "<li><span onclick='_showEdgeFromIdx(" + edgeIdx + ")' style='cursor:pointer; text-decoration:underline; color:#DEB887;'>" + neighbour.label + "</span></li>";
+    });
+    node_info += "</ul>";
+  }
+
+  div2.innerHTML = node_info;
+  document.getElementById('div1').style.display = 'none';
 }
 
 // Display menu

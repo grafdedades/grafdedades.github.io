@@ -551,10 +551,12 @@ function createForceNetwork(nodes, edges) {
     reset();
   }
   
-  // Expose functions globally for dropdown handlers
+  // Expose functions globally for dropdown handlers and displayers
   window.filterByEdgeYears = filterByEdgeYears;
   window.filterByNodeYears = filterByNodeYears;
   window.resetGraph = resetGraph;
+  window.nodeF = nodeF;
+  window.edgeF = edgeF;
 
   // Print the graph as original
 
