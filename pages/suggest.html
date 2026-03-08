@@ -20,8 +20,13 @@
         .cart-item.type-node { border-left-color: #28a745; }
         .cart-item.type-edge { border-left-color: #17a2b8; }
         .cart-item.type-other { border-left-color: #ffc107; }
+        .cart-item.type-edit-edge { border-left-color: #e83e8c; }
         .cart-remove { position: absolute; top: 10px; right: 15px; color: #dc3545; cursor: pointer; font-size: 1.2rem; }
         .cart-remove:hover { color: #bd2130; }
+        
+        /* Edit-edge sub-steps */
+        .edit-step { display: none; }
+        .edit-step.active { display: block; }
 
         .step-header { border-bottom: 2px solid #f0f0f0; margin-bottom: 20px; padding-bottom: 10px; }
         
@@ -82,16 +87,20 @@
                 <div class="container" style="max-width: 800px;">
                     
                     <!-- TYPE SELECTOR (Moved here) -->
-                    <div class="d-flex justify-content-center gap-4 mb-4 pt-3">
-                        <div class="card py-4 m-2 type-select active text-center w-50 shadow-sm" onclick="setMode('node')" id="mode-node">
+                    <div class="d-flex justify-content-center gap-4 mb-4 pt-3 flex-wrap">
+                        <div class="card py-4 m-2 type-select active text-center shadow-sm" style="min-width:140px;flex:1" onclick="setMode('node')" id="mode-node">
                             <i class="fa fa-user fa-2x mb-2 text-success"></i>
                             <h5 class="mb-0">Persona</h5>
                         </div>
-                        <div class="card py-4 m-2 type-select text-center w-50 shadow-sm" onclick="setMode('edge')" id="mode-edge">
+                        <div class="card py-4 m-2 type-select text-center shadow-sm" style="min-width:140px;flex:1" onclick="setMode('edge')" id="mode-edge">
                             <i class="fa fa-link fa-2x mb-2 text-info"></i>
                             <h5 class="mb-0">Connexió</h5>
                         </div>
-                        <div class="card py-4 m-2 type-select text-center w-50 shadow-sm" onclick="setMode('other')" id="mode-other">
+                        <div class="card py-4 m-2 type-select text-center shadow-sm" style="min-width:140px;flex:1" onclick="setMode('edit-edge')" id="mode-edit-edge">
+                            <i class="fa fa-edit fa-2x mb-2" style="color:#e83e8c"></i>
+                            <h5 class="mb-0">Modif. Connexió</h5>
+                        </div>
+                        <div class="card py-4 m-2 type-select text-center shadow-sm" style="min-width:140px;flex:1" onclick="setMode('other')" id="mode-other">
                             <i class="fa fa-comment-dots fa-2x mb-2 text-warning"></i>
                             <h5 class="mb-0">Altre</h5>
                         </div>
@@ -196,6 +205,91 @@
                                     </div>
                                 </div>
 
+                                <!-- EDIT-EDGE FIELDS -->
+                                <div id="fields-edit-edge" style="display:none;">
+                                    <!-- STEP A: Search -->
+                                    <div id="edit-step-search" class="edit-step active">
+                                        <div class="alert alert-info py-2 mb-3">
+                                            <i class="fa fa-search"></i> <strong>Pas 1:</strong> Cerca la connexió que vols modificar.
+                                        </div>
+                                        <div class="form-group position-relative">
+                                            <label>Persona 1 <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control form-control-lg autocomplete" id="edit-source" placeholder="Comença a escriure...">
+                                        </div>
+                                        <div class="form-group position-relative">
+                                            <label>Persona 2 <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control form-control-lg autocomplete" id="edit-target" placeholder="Comença a escriure...">
+                                        </div>
+                                        <div id="edit-search-error" class="alert alert-danger py-2" style="display:none;"></div>
+                                        <button type="button" class="btn btn-secondary btn-block" onclick="searchEdgeForEdit()">
+                                            <i class="fa fa-search"></i> Buscar Connexió
+                                        </button>
+                                    </div>
+
+                                    <!-- STEP B: Edit -->
+                                    <div id="edit-step-form" class="edit-step">
+                                        <div class="alert alert-success py-2 mb-3">
+                                            <i class="fa fa-check-circle"></i> <strong>Pas 2:</strong> Connexió trobada. Modifica els camps que vulguis.
+                                            <button type="button" class="btn btn-sm btn-outline-secondary ml-2" onclick="resetEditSearch()">
+                                                <i class="fa fa-arrow-left"></i> Tornar
+                                            </button>
+                                        </div>
+                                        <p class="font-weight-bold text-pink mb-3" id="edit-edge-title" style="color:#e83e8c"></p>
+                                        <div class="form-row">
+                                            <div class="col-md-6 mb-3">
+                                                <label>Tipus</label>
+                                                <select class="form-control" id="edit-link-weight">
+                                                    <option value="1">Lio (1 punt)</option>
+                                                    <option value="2">Manual (2 punts)</option>
+                                                    <option value="3">Oral (3 punts)</option>
+                                                    <option value="5">Complert (5 punts)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label>Any <span class="text-danger">*</span></label>
+                                                <input type="number" class="form-control" id="edit-link-year" placeholder="2024" min="2017" max="2035">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="col-md-6 mb-3">
+                                                <label>Mes</label>
+                                                <select class="form-control" id="edit-link-month">
+                                                    <option value="">- Selecciona -</option>
+                                                    <option value="1">Gener</option>
+                                                    <option value="2">Febrer</option>
+                                                    <option value="3">Març</option>
+                                                    <option value="4">Abril</option>
+                                                    <option value="5">Maig</option>
+                                                    <option value="6">Juny</option>
+                                                    <option value="7">Juliol</option>
+                                                    <option value="8">Agost</option>
+                                                    <option value="9">Setembre</option>
+                                                    <option value="10">Octubre</option>
+                                                    <option value="11">Novembre</option>
+                                                    <option value="12">Desembre</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label>Lloc</label>
+                                                <input type="text" class="form-control" id="edit-link-place" placeholder="Ex: Razzmatazz">
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>Comentaris</label>
+                                            <input type="text" class="form-control" id="edit-link-comments" placeholder="Opcional">
+                                        </div>
+                                        <div class="form-group mb-0">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="edit-link-relationship">
+                                                <label class="custom-control-label" for="edit-link-relationship">Tenen o han tingut una relació?</label>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-block mt-3 shadow-sm text-white" style="background-color:#e83e8c;" onclick="addEditEdgeToCart()">
+                                            <i class="fa fa-check"></i> Afegir Canvi a la Llista
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <!-- OTHER FIELDS -->
                                 <div id="fields-other" style="display:none;">
                                     <div class="alert alert-warning">
@@ -207,7 +301,7 @@
                                     </div>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary btn-block mt-3 shadow-sm">
+                                <button type="submit" id="btn-add-cart" class="btn btn-primary btn-block mt-3 shadow-sm">
                                     <i class="fa fa-plus"></i> Afegeix a la Llista
                                 </button>
                             </form>
@@ -395,19 +489,16 @@
             document.querySelectorAll('.type-select').forEach(el => el.classList.remove('active'));
             document.getElementById('mode-'+mode).classList.add('active');
 
-            if (mode === 'node') {
-                document.getElementById('fields-node').style.display = 'block';
-                document.getElementById('fields-edge').style.display = 'none';
-                document.getElementById('fields-other').style.display = 'none';
-            } else if (mode === 'edge') {
-                document.getElementById('fields-node').style.display = 'none';
-                document.getElementById('fields-edge').style.display = 'block';
-                document.getElementById('fields-other').style.display = 'none';
-            } else {
-                document.getElementById('fields-node').style.display = 'none';
-                document.getElementById('fields-edge').style.display = 'none';
-                document.getElementById('fields-other').style.display = 'block';
-            }
+            document.getElementById('fields-node').style.display      = (mode === 'node')      ? 'block' : 'none';
+            document.getElementById('fields-edge').style.display      = (mode === 'edge')      ? 'block' : 'none';
+            document.getElementById('fields-edit-edge').style.display = (mode === 'edit-edge') ? 'block' : 'none';
+            document.getElementById('fields-other').style.display     = (mode === 'other')     ? 'block' : 'none';
+            
+            // Show/hide submit button (hidden for edit-edge: it uses step B inline button)
+            document.getElementById('btn-add-cart').style.display = (mode === 'edit-edge') ? 'none' : 'block';
+            
+            // Reset edit-edge to step A when switching to it
+            if (mode === 'edit-edge') resetEditSearch();
         };
 
         // --- INIT ---
@@ -430,7 +521,7 @@
                     var token = new fernet.Token({secret: secret, token: text, ttl: 0});
                     const graph = JSON.parse(token.decode());
                     GRAPH_NODES = graph.nodes.map(n => n.label);
-                    GRAPH_EDGES = graph.edges.map(e => ({source: e.source, target: e.target}));
+                    GRAPH_EDGES = graph.edges; // Store full edge objects for edit-edge lookup
                 } catch (e) { console.warn("Autocomplete load failed", e); }
             }
             setupAutocomplete();
@@ -599,6 +690,9 @@
                         relationship: document.getElementById('link-relationship').checked
                     }
                 };
+            } else if (mode === 'edit-edge') {
+                // Edit-edge is submitted via inline button in Step B, not here
+                return;
             } else if (mode === 'other') {
                 const desc = document.getElementById('other-desc').value.trim();
                 if (!desc) return alert("Has d'escriure una descripció.");
@@ -652,11 +746,17 @@
             CART.forEach((item, idx) => {
                 const div = document.createElement('div');
                 div.className = `cart-item type-${item.type}`;
+                
+                let badgeColor = 'info';
+                if (item.type === 'node') badgeColor = 'success';
+                else if (item.type === 'edit-edge') badgeColor = 'danger';
+                else if (item.type === 'other') badgeColor = 'warning';
+                
                 div.innerHTML = `
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="mb-1">${item.description}</h5>
-                            <span class="badge badge-pill badge-${item.type === 'node' ? 'success' : (item.type === 'edge' ? 'info' : 'warning')}">${item.details}</span>
+                            <span class="badge badge-pill badge-${badgeColor}">${item.details}</span>
                         </div>
                         <i class="fa fa-trash cart-remove" onclick="removeFromCart(${idx})" title="Eliminar"></i>
                     </div>
@@ -665,7 +765,100 @@
             });
         }
 
+        // --- EDIT-EDGE HELPERS ---
+        window.searchEdgeForEdit = function() {
+            const src = document.getElementById('edit-source').value.trim();
+            const tgt = document.getElementById('edit-target').value.trim();
+            const errEl = document.getElementById('edit-search-error');
+
+            errEl.style.display = 'none';
+            if (!src || !tgt) { errEl.textContent = "Has d'omplir ambdós noms."; errEl.style.display = 'block'; return; }
+            if (normalize(src) === normalize(tgt)) { errEl.textContent = "Les dues persones han de ser diferents."; errEl.style.display = 'block'; return; }
+
+            // normalize helper (same logic as in setupAutocomplete)
+            function normalize(str) { return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+
+            const sL = normalize(src), tL = normalize(tgt);
+            const found = GRAPH_EDGES.find(e => {
+                const es = normalize(e.source), et = normalize(e.target);
+                return (es === sL && et === tL) || (es === tL && et === sL);
+            });
+
+            if (!found) {
+                errEl.textContent = `No s'ha trobat cap connexió entre "${src}" i "${tgt}".`;
+                errEl.style.display = 'block';
+                return;
+            }
+
+            // Pre-fill Step B
+            document.getElementById('edit-edge-title').textContent = `✏️ ${found.source} ↔ ${found.target}`;
+            document.getElementById('edit-link-weight').value  = found.weight  || 1;
+            document.getElementById('edit-link-year').value    = found.year    || '';
+            document.getElementById('edit-link-month').value   = found.month   || '';
+            document.getElementById('edit-link-place').value   = found.place   || '';
+            document.getElementById('edit-link-comments').value = found.comments || '';
+            document.getElementById('edit-link-relationship').checked = !!(found.relationship === true || found.relationship === 'TRUE');
+            
+            // Store the found edge as a data attribute on the form
+            document.getElementById('edit-step-form').dataset.before = JSON.stringify(found);
+
+            // Switch to Step B
+            document.getElementById('edit-step-search').classList.remove('active');
+            document.getElementById('edit-step-form').classList.add('active');
+        };
+
+        window.resetEditSearch = function() {
+            document.getElementById('edit-step-search').classList.add('active');
+            document.getElementById('edit-step-form').classList.remove('active');
+            document.getElementById('edit-search-error').style.display = 'none';
+        };
+
+        window.addEditEdgeToCart = function() {
+            const stepB = document.getElementById('edit-step-form');
+            const beforeRaw = stepB.dataset.before;
+            if (!beforeRaw) return alert('Primer busca una connexió.');
+            
+            const before = JSON.parse(beforeRaw);
+            const MAX_YEAR = new Date().getFullYear() + 1;
+            const yearVal = parseInt(document.getElementById('edit-link-year').value);
+            if (!yearVal || yearVal < 2017 || yearVal > MAX_YEAR) {
+                return alert(`L'any ha de ser vàlid (2017 - ${MAX_YEAR})`);
+            }
+
+            const after = {
+                weight:       parseInt(document.getElementById('edit-link-weight').value),
+                year:         yearVal,
+                month:        parseInt(document.getElementById('edit-link-month').value) || null,
+                place:        document.getElementById('edit-link-place').value.trim(),
+                comments:     document.getElementById('edit-link-comments').value.trim(),
+                relationship: document.getElementById('edit-link-relationship').checked
+            };
+
+            CART.push({
+                type: 'edit-edge',
+                description: `${before.source} ↔ ${before.target}`,
+                details: 'Modificar Connexió',
+                payload: {
+                    source:  before.source,
+                    target:  before.target,
+                    before:  { weight: before.weight, year: before.year, month: before.month || null, place: before.place || '', comments: before.comments || '', relationship: !!(before.relationship === true || before.relationship === 'TRUE') },
+                    after:   after
+                }
+            });
+
+            renderCart();
+            // Reset to step A
+            document.getElementById('edit-source').value = '';
+            document.getElementById('edit-target').value = '';
+            resetEditSearch();
+        };
+
         function setupAutocomplete() {
+            // Normalize accents for comparison
+            function normalize(str) {
+                return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            }
+
             // Helper to get all nodes (Graph + Cart)
             function getAvailableNodes() {
                 const newNodes = CART.filter(i => i.type === 'node').map(i => i.payload.label);
@@ -685,13 +878,15 @@
                     this.parentNode.appendChild(list);
                     
                     const allNodes = getAvailableNodes();
+                    const normVal = normalize(val);
                     let matches = 0;
                     for (let i = 0; i < allNodes.length; i++) {
                         if (matches > 8) break;
-                        if (allNodes[i].toUpperCase().includes(val.toUpperCase())) {
+                        if (normalize(allNodes[i]).includes(normVal)) {
                             const item = document.createElement("DIV");
                             item.className = "autocomplete-suggestion";
-                            item.innerHTML = allNodes[i].replace(new RegExp(val, "gi"), "<strong>$&</strong>");
+                            // Highlight: use normalized compare but display original
+                            item.innerHTML = allNodes[i].replace(new RegExp(val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "gi"), "<strong>$&</strong>");
                             item.addEventListener("click", () => {
                                 inp.value = allNodes[i];
                                 closeAll();

@@ -11,6 +11,13 @@
         .item-row:last-child { border-bottom: none; }
         .badge-node { background-color: #28a745; color: white; }
         .badge-edge { background-color: #17a2b8; color: white; }
+        .badge-edit-edge { background-color: #e83e8c; color: white; }
+
+        /* Git-style diff */
+        .diff-table td, .diff-table th { padding: 4px 8px; font-size: 0.85rem; vertical-align: middle; }
+        .diff-del { background: #ffeef0; color: #cb2431; text-decoration: line-through; display: block; padding: 1px 4px; border-radius: 3px; }
+        .diff-ins { background: #e6ffed; color: #22863a; display: block; padding: 1px 4px; border-radius: 3px; }
+        .diff-unchanged { color: #6a737d; }
         
         /* Fix full height background to avoid "lines" at bottom of content */
         html, body { height: 100%; min-height: 100vh; margin: 0; padding: 0; overflow: hidden; background-color: #f8f9fa; }
@@ -244,6 +251,7 @@
                     let badgeClass = 'badge-secondary';
                     if (item.type === 'node') badgeClass = 'badge-node';
                     if (item.type === 'edge') badgeClass = 'badge-edge';
+                    if (item.type === 'edit-edge') badgeClass = 'badge-edit-edge';
                     if (item.type === 'other') badgeClass = 'badge-warning';
                     
                     // Basic Header Info
@@ -252,19 +260,43 @@
                         headerInfo = `<b>${item.payload.label}</b>`;
                     } else if (item.type === 'edge') {
                         headerInfo = `<b>${item.payload.source} ↔ ${item.payload.target}</b>`;
+                    } else if (item.type === 'edit-edge') {
+                        headerInfo = `<b>✏️ ${item.payload.source} ↔ ${item.payload.target}</b>`;
                     } else {
                         headerInfo = `<b>Sol·licitud Manual</b>`;
                     }
 
                     // Detailed Attributes Table
-                    const attributes = Object.entries(item.payload).map(([k, v]) => {
-                         let displayVal = v;
-                         if (k === 'month' && v) {
-                             const months = ["", "Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
-                             displayVal = (v >= 1 && v <= 12) ? months[v] : v;
-                         }
-                         return `<tr><th style="width:120px">${k}</th><td>${displayVal}</td></tr>`;
-                    }).join('');
+                    let detailBlock = '';
+                    if (item.type === 'edit-edge') {
+                        // Git-style diff for edit-edge
+                        const months = ["", "Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
+                        const fieldLabels = { weight: 'Tipus', year: 'Any', month: 'Mes', place: 'Lloc', comments: 'Comentaris', relationship: 'Relació' };
+                        const before = item.payload.before;
+                        const after  = item.payload.after;
+                        const rows = Object.keys(fieldLabels).map(k => {
+                            let bVal = before[k]; let aVal = after[k];
+                            if (k === 'month') { bVal = bVal ? months[bVal] : '-'; aVal = aVal ? months[aVal] : '-'; }
+                            if (k === 'weight') { const wl = ["","Lio","Manual","Oral","","Complert"]; bVal = wl[bVal]||bVal; aVal = wl[aVal]||aVal; }
+                            if (k === 'relationship') { bVal = bVal ? 'Sí' : 'No'; aVal = aVal ? 'Sí' : 'No'; }
+                            const changed = String(bVal) !== String(aVal);
+                            const cell = changed
+                                ? `<span class="diff-del">${bVal !== undefined && bVal !== '' ? bVal : '\u2014'}</span><span class="diff-ins">${aVal !== undefined && aVal !== '' ? aVal : '\u2014'}</span>`
+                                : `<span class="diff-unchanged">${bVal !== undefined && bVal !== '' ? bVal : '\u2014'}</span>`;
+                            return `<tr><th style="width:120px">${fieldLabels[k]}</th><td>${cell}</td></tr>`;
+                        }).join('');
+                        detailBlock = `<table class="table table-sm diff-table mb-0"><tbody>${rows}</tbody></table>`;
+                    } else {
+                        const attributes = Object.entries(item.payload).map(([k, v]) => {
+                             let displayVal = v;
+                             if (k === 'month' && v) {
+                                 const months = ["", "Gener", "Febrer", "Març", "Abril", "Maig", "Juny", "Juliol", "Agost", "Setembre", "Octubre", "Novembre", "Desembre"];
+                                 displayVal = (v >= 1 && v <= 12) ? months[v] : v;
+                             }
+                             return `<tr><th style="width:120px">${k}</th><td>${displayVal}</td></tr>`;
+                        }).join('');
+                        detailBlock = `<table class="table table-sm table-striped mb-0"><tbody>${attributes}</tbody></table>`;
+                    }
 
                     return `
                         <div class="item-row">
@@ -273,7 +305,7 @@
                                     <button class="btn btn-sm btn-light mr-2 border" type="button" data-toggle="collapse" data-target="#${uniqueId}">
                                         <i class="fa fa-caret-down"></i>
                                     </button>
-                                    <span class="badge ${badgeClass} mr-2">${item.type.toUpperCase()}</span>
+                                    <span class="badge ${badgeClass} mr-2">${item.type.toUpperCase().replace('-',' ')}</span>
                                     <span>${headerInfo}</span>
                                 </div>
                                 <small class="text-muted d-none d-md-block">${item.description || ''}</small>
@@ -281,9 +313,7 @@
                             
                             <div id="${uniqueId}" class="collapse mt-2">
                                 <div class="card card-body bg-white border small p-0">
-                                    <table class="table table-sm table-striped mb-0">
-                                        <tbody>${attributes}</tbody>
-                                    </table>
+                                    ${detailBlock}
                                 </div>
                             </div>
                         </div>
@@ -508,6 +538,7 @@
                 // --- STEP 3: Merge ---
                 let nodesAdded = 0;
                 let edgesAdded = 0;
+                let edgesModified = 0;
                 let manualAck = 0;
                 
                 // --- INTEGRITY CHECKS ---
@@ -527,7 +558,7 @@
 
                 // 2. Check for Duplicate Edges or Self-Loops
                 // Create a set of existing edges "source|target" (normalized order)
-                const graphEdges = new Set(graphData.edges.map(e => {
+                const graphEdgeSet = new Set(graphData.edges.map(e => {
                     const [s, t] = [e.source, e.target].sort();
                     return `${s.toLowerCase()}|${t.toLowerCase()}`;
                 }));
@@ -541,10 +572,18 @@
                         const [s, t] = [p.source, p.target].sort();
                         const key = `${s.toLowerCase()}|${t.toLowerCase()}`;
                         
-                        if (graphEdges.has(key)) {
+                        if (graphEdgeSet.has(key)) {
                             throw new Error(`Integrity Error: L'aresta ${p.source} ↔ ${p.target} ja existeix.`);
                         }
-                        graphEdges.add(key);
+                        graphEdgeSet.add(key);
+                    }
+                    if (item.type === 'edit-edge') {
+                        const p = item.payload;
+                        const [s, t] = [p.source, p.target].sort();
+                        const key = `${s.toLowerCase()}|${t.toLowerCase()}`;
+                        if (!graphEdgeSet.has(key)) {
+                            throw new Error(`Integrity Error: L'aresta ${p.source} ↔ ${p.target} no existeix al graf (pot ser que ja estigui editada).`);
+                        }
                     }
                 });
 
@@ -577,12 +616,28 @@
                             comments: p.comments
                         });
                         edgesAdded++;
+                    } else if (item.type === 'edit-edge') {
+                        // Find the existing edge and update it in place
+                        const sL = p.source.toLowerCase(), tL = p.target.toLowerCase();
+                        const existingEdge = graphData.edges.find(e => {
+                            const es = e.source.toLowerCase(), et = e.target.toLowerCase();
+                            return (es === sL && et === tL) || (es === tL && et === sL);
+                        });
+                        if (existingEdge) {
+                            existingEdge.weight       = parseInt(p.after.weight);
+                            existingEdge.year         = parseInt(p.after.year);
+                            existingEdge.month        = p.after.month ? parseInt(p.after.month) : null;
+                            existingEdge.place        = p.after.place || '';
+                            existingEdge.comments     = p.after.comments || '';
+                            existingEdge.relationship = p.after.relationship === true || p.after.relationship === 'true';
+                            edgesModified++;
+                        }
                     } else if (item.type === 'other') {
                         manualAck++;
                     }
                 });
 
-                if (nodesAdded === 0 && edgesAdded === 0 && manualAck === 0) {
+                if (nodesAdded === 0 && edgesAdded === 0 && edgesModified === 0 && manualAck === 0) {
                     alert("No s'han aplicat canvis (ja existien?).");
                 }
                 
@@ -596,7 +651,7 @@
                 var nToken = new fernet.Token({ secret: secret, ttl: 0 }); // Secret constructed with keyUncensored
                 var newEncrytedUncensored = nToken.encode(JSON.stringify(graphData));
                 
-                const commitMsg = `Update Graph [Nodes: +${nodesAdded}, Edges: +${edgesAdded}, Manual: ${manualAck}] Transaction: ${bundle.id}`;
+                const commitMsg = `Update Graph [Nodes: +${nodesAdded}, Edges: +${edgesAdded}, Edited: ${edgesModified}, Manual: ${manualAck}] Transaction: ${bundle.id}`;
 
                 const putUncensoredRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${UNCENSORED_PATH}`, {
                     method: 'PUT',
@@ -668,7 +723,7 @@
                 btn.innerText = 'Finalitzant...';
                 await updateStatus(bundle.id, 'accepted');
                 
-                alert(`Èxit! ${nodesAdded} nodes i ${edgesAdded} connexions afegides.\nTotal manual: ${manualAck}.\nS'han actualitzat els dos fitxers correctament.\n\nRecarregant dades d'aquí 5 segons...`);
+                alert(`Èxit! ${nodesAdded} nodes i ${edgesAdded} connexions afegides, ${edgesModified} connexions editades.\nTotal manual: ${manualAck}.\nS'han actualitzat els dos fitxers correctament.\n\nRecarregant dades d'aquí 5 segons...`);
                 
                 // Wait 5 seconds and reload (fetch again for verification/consistency)
                 setTimeout(() => {
